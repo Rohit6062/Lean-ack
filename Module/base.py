@@ -9,11 +9,17 @@ from collections import deque, defaultdict
 from functools import reduce
 import numpy as np
 import ctypes 
+import sys 
 clib = ctypes.cdll.LoadLibrary('/home/rohit/Desktop/Network/udp_project/Module/clib.so')
 encoding  = 'UTF-8'
 class base_class:
     def __init__():
-        self.return_data = {}
+        self.return_data  = None
+
+    def err_exit(self,msg):
+        ic(msg)
+        exit(1)
+
     def int_to_bytes(self,x,n):
         out = ''
         for i in range(n):
@@ -25,7 +31,6 @@ class base_class:
         if not n:
             return 0 
         return (n & 1) + self.bit_count(n >> 1)
-
 
     def bytes_to_int(self,x,n):
         out = 0  
@@ -51,40 +56,54 @@ class base_class:
         if not sock or not data:
             ic('sock or data not appropiate')
             exit(0)
-        ln = sock.sendto(data.encode('UTF-8'),(reciever_ip,reciever_port))
-        ic(len(data))
+        ln = sock.sendto(data.encode(encoding),(reciever_ip,reciever_port))
         ic(ln)
         if ln<0:ic('error in sento',ln,len(data));exit(0);
         return ln
 
     def recieve(self,buff_size ,sock ,return_data):
-        data,addr = sock.recvfrom(64000)
-        if self.is_correct(data.decode('UTF-8')):
-            return_data['data']=data.decode('UTF-8')
-            ic(len(return_data['data']))
-            ic(len(data))
+        data,addr = sock.recvfrom(2**16-1)
+        if self.is_correct(data.decode(encoding)):
+            return_data['data']=data.decode(encoding)
+            ic(len(return_data['data'][10:])== self.buffer_size)
             return return_data['data']
+        else:
+            print("data incorrect")
 
     def xor(self,a,b):
-        if not a:
-            return b
-        if not b:
-            return a
-        out = [chr(0)]*self.buffer_size 
-        mn = min(len(a),len(b))
-        mx = max(len(a),len(b))
-        if len(a)<len(b):k = b 
-        else: k = a
-        i=0
-        while i<mn:
-            out[i] = chr(ord(a[i]) ^ ord(b[i]))
-            i+=1 
-        while i < mx:
-            out[i] = k[i] 
-            i+=1
+        if not a:return b 
+        if not b:return a 
+        if len(a) != len(b) : ic("in xor sizes are not same");exit(0)
+        out = [chr(0)]*len(a)
+        for i in range(len(a)):out[i] = chr(ord(a[i]) ^ ord(b[i]))
+        # ic(out,a,b)
+        # ic([bin(ord(i)) for i in out],[bin(ord(i)) for i in b],[bin(ord(i)) for i in a])
         return ''.join(out)
 
+    def is_subset(self,a,b): 
+        self.set_boolVector(self.boolVector,a,True)
+        for i in range(len(a)):self.set1[i] = a[i]
+        for i in range(len(b)):self.set2[i] = b[i]
+        # ic(k :=  clib.is_subset(self.set1,len(a),self.set2,len(b),self.boolVector))
+        k =  clib.is_subset(self.set1,len(a),self.set2,len(b),self.boolVector)
+        return k
+        
+    def subtract(self,a,b):
+        for i in b:self.subVector[i] = True
+        # sleep(3)
+        out = [0]*(len(a) - len(b)) 
+        k = 0 
+        for i in a:
+            if not self.subVector[i]:
+                out[k] = i 
+                k+=1 
+        # ic(a,b,out)
+        return out
 
+    def set_boolVector(self,vector,a,x):
+        for i in range(len(a)):self.set1[i] = a[i]
+        k = clib.set(vector,self.set1,len(a),ctypes.c_bool(x))
+        return True
 
     def run_process(self,func,func_name,args,time_count):
         manager = Manager()

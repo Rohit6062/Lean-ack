@@ -1,7 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<stdbool.h>
-bool p(int* a,int n,int *b,int m,bool* is_checked){
+bool is_subset(int* a,int n,int *b,int m,bool* is_checked){
     for(int i=0;i<n;i++){
         is_checked[a[i]] = true;
     }
@@ -11,9 +11,10 @@ bool p(int* a,int n,int *b,int m,bool* is_checked){
     return (n==m)?false:true;
 }
 void set(bool* is_checked , int* a, int n , bool x){
+    // printf("set %p %p %d %d\n",is_checked,a,n,x);
     for(int i=0;i<n;i++){
+        // printf("%d -> %d\n",i,a[i]);
         is_checked[a[i]] = x;
-        printf("%d ",is_checked[a[i]]);
     }
-    printf("\n");
+    // for(int i=0;i<10;i++)printf("%d ",is_checked[i]);
 }
