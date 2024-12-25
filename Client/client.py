@@ -10,11 +10,11 @@ class tst(base_class):
         self.c_port        = c_port 
         self.client_sock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM) 
         self.client_sock.bind((self.client_ip,self.c_port))
-        self.buffer_size = 10240.0
+        self.buffer_size = 65000.0
         ic(server_ip,s_port,client_ip,c_port)
     def setup(self,filename,delta):
         try:
-            self.file = open(filename,'r+')
+            self.file = open(filename,'rb+')
         except Exception as e:
             ic(e)
             exit(0)
@@ -29,16 +29,18 @@ class tst(base_class):
             self.n = 10 
         else:
             self.n = int(ceil(self.file_size / (self.buffer_size*1.0)))
-            self.buffer_size = 10240
+            self.buffer_size = int(self.buffer_size)
         cnt = 0
         ic(self.buffer_size,self.file_size,self.n)
-        recieved_data = None
-        while recieved_data == None or recieved_data['data'][2:] != self.int_to_bytes(0,1):
-            data = self.int_to_bytes(cnt,1) + self.int_to_bytes(self.file_size,4)+ self.int_to_bytes(self.n,4)+self.int_to_bytes(self.buffer_size+10,4)+filename     
+        manager = Manager()
+        recieved_data = manager.dict()
+        p = Process(target = self.recieve, args = (self.buffer_size+2,self.client_sock,recieved_data))
+        p.start()
+        while p.is_alive() or recieved_data['data'][2:] != self.int_to_bytes(0,1):
+            data = self.int_to_bytes(cnt,1) + self.int_to_bytes(self.file_size,4)+ self.int_to_bytes(self.n,4)+self.int_to_bytes(self.buffer_size+10,4)+filename.encode()     
             data = data
             data = self.checksum(data)+data 
             self.send(data,self.client_sock,self.server_ip,self.s_port)
-            recieved_data = self.run_process(self.recieve,'recieve',[self.buffer_size+2,self.client_sock],5)
         cnt+=1 
         recieved_data = None
         ic("setup done -------------") 
@@ -59,11 +61,11 @@ class tst(base_class):
                 selected_symbols = random.sample(range(self.n),degree)
                 pair = [degree,seed]
                 if tuple(pair) in encode_symbols:continue
-                base = ''
+                base = b''
                 for i in selected_symbols:
                     self.file.seek(i*self.buffer_size)
                     read_data = self.file.read(self.buffer_size)
-                    if len(read_data)<self.buffer_size: read_data = read_data + chr(0)*(self.buffer_size - len(read_data)) 
+                    if len(read_data)<self.buffer_size: read_data = read_data + bytes(self.buffer_size - len(read_data)) 
                     base = self.xor(base,read_data)
                 encode_symbols[tuple(pair)]=1
                 ic(pair,selected_symbols)
@@ -71,24 +73,25 @@ class tst(base_class):
                 data = self.checksum(data) + data
                 self.send(data,self.client_sock,self.server_ip,self.s_port)
                 ic(cnt)
-                # sleep(1)
                 cnt = ((cnt + 1)%256)   
             elif return_data['data'] == 'recieved':
                 break 
             else:
                 break
                 ic(return_data.keys())
-                return_data  = self.run_process(self.recieve ,'recieve',[self.buffer_size,self.client_sock],30)
+                p1 = Process(target = self.recieve , args = (self.buffer_size,self.client_sock,return_data))
+                p1.start()
             # sleep(1)
         ic('transfer sucessfull')
 if __name__ == "__main__":
     ip1 =   socket.gethostbyname(socket.gethostname())
+    # ip1 = '192.168.1.8'
     ip2 =   ip1
     port1 = 5001
     port2 = 5002
     a = tst(ip1,ip2,port1,port2)
-    # filename = raw_input('Enter File u Want to send: ')
-    filenames = ['small.txt','test1.txt','test.txt','intercity.sql']
+    filenames = ['small.txt','test1.txt','test.txt','intercity.sql','Data.txt']
     ic(filenames)
     x = int(input('filename:'))
+    # x = 'inp.sh'
     a.send_file(filenames[x])

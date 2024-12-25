@@ -21,11 +21,7 @@ class base_class:
         exit(1)
 
     def int_to_bytes(self,x,n):
-        out = ''
-        for i in range(n):
-            out+= chr(x & 255)
-            x = x >> 8
-        return out[::-1]
+        return x.to_bytes(n,byteorder = 'big')
     
     def bit_count(self,n):
         if not n:
@@ -33,17 +29,13 @@ class base_class:
         return (n & 1) + self.bit_count(n >> 1)
 
     def bytes_to_int(self,x,n):
-        out = 0  
-        for i in range(n):
-            out = out << 8
-            out += ord(x[i]) 
-        return out 
+        return int.from_bytes(x,byteorder='big')
 
-    def checksum(self,s ):
+    def checksum(self,s):
         cnt = 0
-        for i in s:cnt+= self.bit_count(ord(i))
-        if cnt %2==0:return '0'
-        return '1'
+        for i in s:cnt+= self.bit_count(i)
+        if cnt %2==0:return b'0'
+        return b'1'
 
     def is_correct(self,data):
         return self.checksum(data[1:])==data[:1]
@@ -56,16 +48,15 @@ class base_class:
         if not sock or not data:
             ic('sock or data not appropiate')
             exit(0)
-        ln = sock.sendto(data.encode(encoding),(reciever_ip,reciever_port))
+        ln = sock.sendto(data,(reciever_ip,reciever_port))
         ic(ln)
         if ln<0:ic('error in sento',ln,len(data));exit(0);
         return ln
 
     def recieve(self,buff_size ,sock ,return_data):
         data,addr = sock.recvfrom(2**16-1)
-        if self.is_correct(data.decode(encoding)):
-            return_data['data']=data.decode(encoding)
-            ic(len(return_data['data'][10:])== self.buffer_size)
+        if self.is_correct(data):
+            return_data['data']=data
             return return_data['data']
         else:
             print("data incorrect")
@@ -75,47 +66,30 @@ class base_class:
         if not b:return a 
         if len(a) != len(b) : ic("in xor sizes are not same");exit(0)
         out = [chr(0)]*len(a)
-        for i in range(len(a)):out[i] = chr(ord(a[i]) ^ ord(b[i]))
-        # ic(out,a,b)
-        # ic([bin(ord(i)) for i in out],[bin(ord(i)) for i in b],[bin(ord(i)) for i in a])
-        return ''.join(out)
+        for i in range(len(a)): out[i] = a[i] ^ b[i]
+        return bytes(out)
 
     def is_subset(self,a,b): 
         self.set_boolVector(self.boolVector,a,True)
         for i in range(len(a)):self.set1[i] = a[i]
         for i in range(len(b)):self.set2[i] = b[i]
-        # ic(k :=  clib.is_subset(self.set1,len(a),self.set2,len(b),self.boolVector))
         k =  clib.is_subset(self.set1,len(a),self.set2,len(b),self.boolVector)
         return k
         
     def subtract(self,a,b):
         for i in b:self.subVector[i] = True
-        # sleep(3)
         out = [0]*(len(a) - len(b)) 
         k = 0 
         for i in a:
             if not self.subVector[i]:
                 out[k] = i 
                 k+=1 
-        # ic(a,b,out)
         return out
 
     def set_boolVector(self,vector,a,x):
         for i in range(len(a)):self.set1[i] = a[i]
         k = clib.set(vector,self.set1,len(a),ctypes.c_bool(x))
         return True
-
-    def run_process(self,func,func_name,args,time_count):
-        manager = Manager()
-        return_data = manager.dict()
-        p = Process(target = func , name=func_name , args = tuple(args+[return_data]))
-        p.start()
-        base = time() + time_count
-        while base > time() and p.is_alive():continue
-        if not p.is_alive():return return_data 
-        p.terminate()
-        p.join()
-        return None 
 
     def _robust_soliton_distribution(self):
         distribution = [1 / self.n] + [1 / (i * (i - 1)) for i in range(2, self.n + 1)]
@@ -138,8 +112,10 @@ class base_class:
             if rand_value <= cumulative:
                 return degree
         return self.n
+
     def do_it(self):
         self.degree_distribution = self._robust_soliton_distribution() 
+
     def degree(self):
         return self._choose_degree()
 import math

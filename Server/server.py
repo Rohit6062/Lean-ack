@@ -35,7 +35,7 @@ class tst(base_class):
         self.file_name   = data[14::]
         ic(self.start_seq,self.file_size,self.block_count,self.buffer_size,self.file_name)
         self.is_recived  = [False]* self.block_count
-        self.output_file = open(self.file_name,'w+')
+        self.output_file = open(self.file_name,'wb+')
         self.bitVector = [False]*self.block_count
         self.boolVector = (ctypes.c_bool * self.block_count)()
         self.subVector = (ctypes.c_bool * self.block_count)()
@@ -50,7 +50,7 @@ class tst(base_class):
         
     def receive_it(self):
         self.testdict=  {}
-        cnt = int(floor(self.block_count * 1.5))#int(floor(log(self.block_count,2))))) 
+        cnt = int(floor(self.block_count * 1.25))#int(floor(log(self.block_count,2))))) 
         prev_seq = 1
         manager = Manager()
         return_data = manager.dict()
@@ -76,18 +76,18 @@ class tst(base_class):
             self.testdict[self.storage_file.tell()] = (curr_recived,prev_seq,len(data[10:]))
             if degree == 1:available_symbols.appendleft([self.storage_file.tell(),curr_recived])
             else:available_symbols.append([self.storage_file.tell(),curr_recived])
-            ic(self.storage_file.tell(),curr_recived,data[10:])
+            # ic(self.storage_file.tell(),curr_recived,data[10:])
             ln = self.storage_file.write(data[10:])
             for i in curr_recived:
                 recieved_symbols[i] = True 
+            ic(cnt)
             cnt-=1 
-        data = self.int_to_bytes(1,1) + 'recieved'
+        data = self.int_to_bytes(1,1) + b'recieved'
         data = self.checksum(data)+data 
         for _ in range(5):self.send(data,self.server_sock,self.client_ip,self.c_port);sleep(0.001)
         if not all(recieved_symbols):print('insufficient symbols');return False
         start = time()
-        ic(self.testdict)
-        a = self.__decode(available_symbols)
+        ic(a := self.__decode(available_symbols))
         ic(time() - start) 
         return a
        
@@ -100,21 +100,16 @@ class tst(base_class):
             file_index , indexes = available_symbols.popleft()
             self.storage_file.seek(file_index)
             tmp1 = self.storage_file.read(self.buffer_size)
-            ic(indexes , tmp1,self.storage_file.seek(file_index))
-            ic(ord(tmp1))
             for i in range(n):
                 changed_indexes = deepcopy(available_symbols[i][1])
                 if self.is_subset(available_symbols[i][1],indexes): #available_symbols[i][1] - indexes
-                    ic(available_symbols[i][1],indexes,self.subtract(available_symbols[i][1] , indexes)) # indexes - available_symbols
                     available_symbols[i][1] = self.subtract(available_symbols[i][1],indexes) #  a-b 
                     self.storage_file.seek(available_symbols[i][0])
-                    ic(self.storage_file.tell())
-                    ic(tmp2 := self.storage_file.read(self.buffer_size))
-                    ic(tmp2 := self.xor(tmp1,tmp2))                
-                    ic(ord(tmp2))
+                    self.storage_file.tell()
+                    tmp2 = self.storage_file.read(self.buffer_size)
+                    tmp2 = self.xor(tmp1,tmp2)                
                     self.storage_file.seek(available_symbols[i][0])
-                    if(ord(tmp2)==13):ic('-------------------------------------------------------------------------------')
-                    ic(k := self.storage_file.write(tmp2))
+                    k = self.storage_file.write(tmp2)
                     if k == 0 and k!=None:ic('write error  : ', k,tmp2,len(tem1));exit(0)
                 self.set_boolVector(self.boolVector,changed_indexes,False)
                 self.set_boolVector(self.subVector,changed_indexes,False)
@@ -122,20 +117,61 @@ class tst(base_class):
                 tmp = indexes[0]
                 if self.is_recived[tmp]:continue
                 self.output_file.seek(tmp*self.buffer_size)
-                ic(k:=self.output_file.write(tmp1))
-                ic(tmp*self.buffer_size,tmp1)
-                if not self.testdict.get(tmp*self.buffer_size):ic("erro in wiritin ");exit(0)
+                k=self.output_file.write(tmp1)
+                # if not self.testdict.get(tmp*self.buffer_size):ic("erro in wiritin ");exit(0)
                 self.is_recived[tmp] = True
             elif is_visited[tuple(indexes)]>3:continue 
             else:
                 is_visited[tuple(indexes)]+=1
                 available_symbols.append([file_index,indexes])
                 n+=1
-        ic(available_symbols,self.is_recived)
+        # ic(available_symbols,self.is_recived)
         return all(self.is_recived)
 
+    def __decode(self,available_symbols ):
+        source_symbols = deque([])
+        intermediate_symbols = deque([])
+        is_visited = defaultdict(int)
+        n = len(available_symbols)
+        while available_symbols:
+            ic(available_symbols)
+            file_index1 , indexes1 = available_symbols.popleft()
+            self.storage_file.seek(file_index1)
+            tmp1 = self.storage_file.read(self.buffer_size)
+            while available_symbols:
+                file_index2 , indexes2 = available_symbols.popleft()
+                changed_indexes = deepcopy(indexes2)
+                if self.is_subset(indexes2,indexes1):
+                    indexes2 = self.subtract(indexes2,indexes1)
+                    self.storage_file.seek(file_index2)
+                    tmp2 = self.storage_file.read(self.buffer_size)
+                    tmp2 = self.xor(tmp2,tmp1)
+                    self.storage_file.seek(file_index2)
+                    k = self.storage_file.write(tmp2)
+                    if k==0 and k!=None:ic('write error',k,tmp2,len(tmp1));exit(0)
+                self.set_boolVector(self.boolVector,changed_indexes,False) 
+                self.set_boolVector(self.subVector,changed_indexes,False) 
+                if len(indexes2)==1:source_symbols.append([file_index2,indexes2])
+                else:intermediate_symbols.append([file_index2,indexes2])
+            while source_symbols:
+                available_symbols.append(source_symbols.popleft())
+            while intermediate_symbols:
+                available_symbols.append(intermediate_symbols.popleft())
+            if len(indexes1)==1:
+                tmp = indexes1[0]
+                if self.is_recived[tmp]:continue 
+                self.output_file.seek(tmp*self.buffer_size)
+                self.output_file.write(tmp1) 
+                self.is_recived[tmp] = True
+            elif is_visited[tuple(indexes1)] > 3:continue
+            else:
+                is_visited[tuple(indexes1)] +=1
+                available_symbols.append([file_index1,indexes1])
+        # ic(self.is_recived)
+        return all(self.is_recived)
 if __name__ == "__main__":
     ip1 =   socket.gethostbyname(socket.gethostname())
+    # ip1 = '192.168.1.8'
     ip2 =   ip1
     port1 = 5001
     port2 = 5002
