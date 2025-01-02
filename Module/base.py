@@ -27,7 +27,7 @@ class base_class:
         if not n:
             return 0 
         return (n & 1) + self.bit_count(n >> 1)
-
+#
     def bytes_to_int(self,x,n):
         return int.from_bytes(x,byteorder='big')
 
