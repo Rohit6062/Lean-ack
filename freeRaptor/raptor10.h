@@ -203,4 +203,6 @@ void my_encode(uint8_t *src_s,uint8_t* enc_s, Raptor10* obj);
 void r10_decode(uint8_t *enc_s, uint8_t *dec_s, Raptor10 *obj, gf2matrix *A,
                 uint32_t N_, uint32_t *ESIs);
 
+int gaussian_elimination(gf2matrix* mat, uint8_t *result, int size,Raptor10* obj);
+int gaussian_elim(gf2matrix* mat, char *result, int size,Raptor10* obj,int*);
 #endif

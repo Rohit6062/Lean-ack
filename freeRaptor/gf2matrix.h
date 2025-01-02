@@ -171,5 +171,6 @@ void mat_mul(gf2matrix *matA, gf2matrix *matB, gf2matrix *result);
  * @return integer something NOT CLEAR
  */
 int gaussjordan_inv(gf2matrix *mat);
+void print_matrix2(gf2matrix *mat,char* res);
 
 #endif

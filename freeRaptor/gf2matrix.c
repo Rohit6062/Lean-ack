@@ -88,6 +88,19 @@ void print_matrix(gf2matrix *mat) {
   }
     printf("\n");
 }
+void print_matrix2(gf2matrix *mat,char* res) {
+  uint32_t nrows = get_nrows(mat);
+  uint32_t ncols = get_ncols(mat);
+    printf("nrows %d cols %d \n",nrows,ncols);
+  for (int i = 0; i < nrows; i++) {
+    for (int j = 0; j < ncols; j++)
+      printf("%d ", get_entry(mat, i, j));
+    printf("%d ",res[i]);
+    printf("\n");
+  }
+    printf("\n");
+}
+
 
 void swap_cols(gf2matrix *mat, int m, int k) {
   uint32_t nrows = get_nrows(mat);

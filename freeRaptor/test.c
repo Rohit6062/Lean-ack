@@ -23,17 +23,31 @@ int main() {
 // void my_encode(uint8_t *src_s,uint8_t* enc_s, Raptor10* obj){
   strcpy(src_s,data);
   my_encode(src_s, enc_s, &coder);
-    gf2matrix* mat = (gf2matrix*)malloc(sizeof(gf2matrix));
-    uint8_t* recived_symb = (uint8_t*) malloc(sizeof(uint8_t)*7);
-    recived_symb[0] = 'r';
-    set_entry(mat,0,0);
-    recived_symb[1] = 'h';
-    set_entry(mat,1,2);
-    recived_symb[2] = 'i';
-    set_entry(mat,2,3);
-    recived_symb[3] = 't';
-    set_entry(mat,3,4);
-    strncpy(recived_symb[4],enc_s[0],1);
+//   gf2matrix* mat = (gf2matrix*)malloc(sizeof(gf2matrix));
+//   allocate_gf2matrix(mat,5,5);
+//     char* recived_symb = (char*) malloc(sizeof(char)*7);
+//     uint8_t recived[] = {1,105,116,105,114};
+//   int* d = malloc(sizeof(int)*5);
+//   for(int i=0;i<5;i++)recived_symb[i]=recived[i];
+//   set_entry(mat,4,0,1);
+//   d[4]=1;
+//   set_entry(mat,3,3,1);
+//   d[3]=1;
+//   set_entry(mat,2,4,1);
+//   d[2]=1;
+//   set_entry(mat,1,0,1);
+//   set_entry(mat,1,1,1);
+//   set_entry(mat,1,4,1);
+//   d[1] = 3;
+//   set_entry(mat,0,2,1);
+//   set_entry(mat,0,3,1);
+//   d[0]=2;
+//   print_matrix2(mat,recived_symb);
+//     
+// // int gaussian_elimination(gf2matrix* mat, uint8_t *result, int size,Raptor10* obj){
+//   gaussian_elim(mat,recived_symb,5,&coder,d);
+//   for(int i=0;i<5;i++)printf("%c",recived_symb[i]);
+
 
 
 

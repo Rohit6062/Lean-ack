@@ -10,4 +10,4 @@ gf2matrix.o: gf2matrix.c
 	gcc -c -g -fPIC gf2matrix.c -I. -lm
 
 clean:
-	rm test raptor10.o gf2matrix.o
+	rm test *.o

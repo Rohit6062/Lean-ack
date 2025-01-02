@@ -19,6 +19,7 @@
 #include "raptor10.h"
 #include <math.h>
 #include <stdint.h>
+#include<stdbool.h>
 
 void generate_gray_seq(uint32_t *gray_seq) {
   for (uint32_t i = 0; i < 4000; i++)
@@ -94,16 +95,18 @@ uint32_t r10_Deg(uint32_t v) {
 
 int r10_build_LDPC_submat(int K, int S, gf2matrix *A) {
   int a = 0, b = 0;
-
-  for (int i = 0; i < K; i++) {
+  for (int i = 0; i < K; i++){
     a = 1 + ((int)floor(i / S) % (S - 1));
     b = i % S;
+        printf("%d %d\n",b,i);
     set_entry(A, b, i, 1);
     /* C[K+b] = C[K+b] ^ C[i]; */
     b = (b + a) % S;
+        printf("%d %d\n",b,i);
     set_entry(A, b, i, 1);
     /* C[K+b] = C[K+b] ^ C[i]; */
     b = (b + a) % S;
+        printf("%d %d\n",b,i);
     set_entry(A, b, i, 1);
     /* C[K+b] = C[K+b] ^ C[i]; */
   }
@@ -187,24 +190,15 @@ void r10_build_LT_mat(uint32_t N_, Raptor10 *obj, gf2matrix *G_LT,uint32_t *ESIs
         }
     }
 }
-//
-// uint8_t* r10_LTEnc(uint32_t esi, uint32_t K, uint32_t* C,Raptor10* obj,uint32_t L,uint32_t L_) {
-//     uint8_t* output = (uint8_t*) calloc(sizeof(uint8_t)*obj->T);
-//     uint32_t triple[3];
-//     r10_Trip(obj->K,esi,obj);
-//     uint32_t j_max = fmin((triple[0]-1),(obj->L-1));
-//     while(triple[0]>= obj->L)b = (b+a)%L_;
-//   }
-// }
 int gaussian_elimination(gf2matrix* mat, uint8_t *result, int size,Raptor10* obj){
-    uint8_t* dest = (uint8_t*) malloc(sizeof(uint8_t)*obj->T);
+    char dest;
     for (int i = 0; i < size; i++) {
-        if (get_entry(mat,i,i) == 0) {
+        if (!get_entry(mat,i,i)) {
             for (int j = i + 1; j < size; j++) {
                 if (get_entry(mat,j,i) == 1){
-                    strncpy((char*)dest,(char*)result[i],obj->T);
-                    strncpy((char*)result[i],(char*)result[j],obj->T);
-                    strncpy((char*)result[j],(char*)dest,obj->T);
+                    dest = result[j];
+                    result[j] = result[i];
+                    result[i] = dest;
                     swap_rows(mat,i,j);
                     break;
                 }
@@ -213,16 +207,52 @@ int gaussian_elimination(gf2matrix* mat, uint8_t *result, int size,Raptor10* obj
         if (!get_entry(mat,i,i)) return -1;
         for (int j = 0; j < size; j++) {
             if (j != i && get_entry(mat,j,i) == 1) {
-                for (int k = 0; k < size; k++) {
-                    // matrix[j][k] ^= matrix[i][k];
-                    set_entry(mat,j,k,0);
-                }
+                set_entry(mat,j,i,0);
+                printf("j-> %d i -> %d \n",result[j],result[i]);
                 result[j] ^= result[i];
+                printf("%d \n",result[j]);
             }
         }
     }
     return 0; // Success
 }
+int gaussian_elim(gf2matrix* mat,char* result,int size, Raptor10* obj, int* d){
+    char dest;
+    int tmp;
+    bool is_start = true;
+    for(int i=0;i<size;i++){
+        is_start = true;
+        if(!get_entry(mat,i,i)){
+            for(int j=0;j<size;j++){
+                if(i!=j && get_entry(mat,j,i) && (is_start || d[j] <= d[i])){
+                    dest = result[i];
+                    result[i] = result[j];
+                    result[j] = dest;
+                    tmp = d[i];
+                    d[i] = d[j];
+                    d[j] = tmp;
+                    // printf("swap %d %d\n",i,j);
+                    swap_rows(mat,i,j);
+                    // print_matrix2(mat,result);
+                    is_start = false;
+                }
+            }
+        }
+        if(!d[i]) return -1;
+        for(int j=0;j<size;j++){
+            // printf("j %d i %d d[i] %d \n",j,i,d[i]);
+            if(j != i && get_entry(mat,j,i) && d[i] == 1){
+                // printf("j %d i %d\n",j,i);
+                // printf("xor %d %d\n",i,j);
+                set_entry(mat,j,i,0);
+                d[j]-=1;
+                result[j] ^= result[i];
+                // print_matrix2(mat,result);
+            }
+        }
+    }
+    return 0;
+} 
 int r10_build_constraints_mat(Raptor10 *obj, gf2matrix *A) {
     r10_build_LDPC_submat(obj->K, obj->S, A);
     // print_matrix(A);
@@ -280,7 +310,6 @@ void r10_encode(uint8_t *src_s, uint8_t *enc_s, Raptor10 *obj, gf2matrix *A) {
     for(int i=0;i<obj->L;i++)printf("%d ",enc_s[i]);
     printf("<-- encrypted done\n");
 }
-
 /*
  * Assumptions:
  * src_s data is padded wiht 0 so that len(src_s) == obj->L*obj->T;
