@@ -31,6 +31,7 @@ uint32_t wordbitmask = 8 * sizeof(word);
 uint32_t wordshift = 5;
 
 void allocate_gf2matrix(gf2matrix *mat, uint32_t n_rows, uint32_t n_cols) {
+    printf("allocating %d rows and %d cols\n",n_rows,n_cols);
   mat->n_rows = n_rows;
   mat->n_cols = n_cols;
   mat->n_words = (mat->n_cols + wordsize - 1) >> wordshift;
@@ -40,7 +41,6 @@ void allocate_gf2matrix(gf2matrix *mat, uint32_t n_rows, uint32_t n_cols) {
     mat->rows[i] = (word *)malloc(mat->n_words);
     memset(mat->rows[i], 0, mat->n_words);
   }
-
   mat->m_data = (word *)mat->rows[0];
 }
 
@@ -83,7 +83,6 @@ void print_matrix(gf2matrix *mat) {
   for (int i = 0; i < nrows; i++) {
     for (int j = 0; j < ncols; j++)
       printf("%d ", get_entry(mat, i, j));
-
     printf("\n");
   }
     printf("\n");
@@ -144,8 +143,7 @@ int gaussjordan_inv(gf2matrix *mat) {
   uint32_t ncols_mat = get_ncols(mat);
   uint32_t nwords_mat = get_nwords(mat);
   for (int i = 0, j = 0; i < nrows_mat; j = ++i) {
-    for (; j < ncols_mat && !get_entry(mat, j, i); j++)
-      ;
+    for (; j < ncols_mat && !get_entry(mat, j, i); j++);
 
     if (i != j)
       swap_rows(mat, i, j);

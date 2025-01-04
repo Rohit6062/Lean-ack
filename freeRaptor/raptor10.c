@@ -1,21 +1,3 @@
-/*
- *  Copyright 2020 Roberto Francescon
- *  Copyright 2022 Dominik Danelski
- *  This file is part of freeRaptor.
- *
- *  freeRaptor is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *  freeRaptor is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with freeRaptor.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include "raptor10.h"
 #include <math.h>
 #include <stdint.h>
@@ -98,22 +80,15 @@ int r10_build_LDPC_submat(int K, int S, gf2matrix *A) {
   for (int i = 0; i < K; i++){
     a = 1 + ((int)floor(i / S) % (S - 1));
     b = i % S;
-        printf("%d %d\n",b,i);
     set_entry(A, b, i, 1);
-    /* C[K+b] = C[K+b] ^ C[i]; */
     b = (b + a) % S;
-        printf("%d %d\n",b,i);
     set_entry(A, b, i, 1);
-    /* C[K+b] = C[K+b] ^ C[i]; */
     b = (b + a) % S;
-        printf("%d %d\n",b,i);
     set_entry(A, b, i, 1);
-    /* C[K+b] = C[K+b] ^ C[i]; */
   }
 }
 
-int r10_build_Half_submat(unsigned int K, unsigned int S, unsigned int H,
-                          gf2matrix *A) {
+int r10_build_Half_submat(unsigned int K, unsigned int S, unsigned int H,gf2matrix *A) {
   uint32_t g[4000];
   generate_gray_seq(&g[0]);
   uint H_ = ceil((float)H / 2.0);
@@ -143,129 +118,89 @@ int r10_build_LT_submat(uint32_t K, uint32_t S, uint32_t H, Raptor10 *obj,gf2mat
   uint32_t L_ = L;
   while (!is_prime(L_))
     L_++;
-
-  for (uint32_t i = 0; i < K; i++) {
-    uint32_t triple[3] = {0};
-    r10_Trip(K, i, triple, obj);
-    uint32_t d = triple[0];
-    uint32_t a = triple[1];
-    uint32_t b = triple[2];
-    uint32_t j_max = fmin((d - 1), (L - 1));
-
-    while (b >= L)
-      b = (b + a) % L_;
-
-    set_entry(A, i + S + H, b, 1);
-
-    for (uint j = 1; j <= j_max; j++) {
-      b = (b + a) % L_;
-
-      while (b >= L)
-        b = (b + a) % L_;
-
-      set_entry(A, i + S + H, b, 1);
-    }
-  }
+  for(uint32_t i = 0; i < K; i++)LTEncode(obj,A,i,i+S+H,L_);
 }
 
+void LTEncode(Raptor10* obj,gf2matrix* mat,uint32_t x, uint32_t row_index ,uint32_t L_){
+    uint32_t triple[3];
+    r10_Trip(obj->K,x,triple,obj);
+    uint32_t j_max = fmin((triple[0]-1),(obj->L-1));
+    while(triple[2] >= obj->L) triple[2] = (triple[2] + triple[1]) % L_;
+    set_entry(mat,row_index,triple[2],1);
+    for(uint j =1;j<=j_max;j++){
+        do {
+            triple[2] = (triple[2] + triple[1]) % L_;
+        }while (triple[2] >= obj->L); 
+        set_entry(mat,row_index,triple[2],1);
+    }
+}
 void r10_build_LT_mat(uint32_t N_, Raptor10 *obj, gf2matrix *G_LT,uint32_t *ESIs) {
     printf("N_ = %d\n", N_);
     uint32_t L = obj->K + obj->S + obj->H;
     uint32_t L_ = obj->L;
     while (!is_prime(L_))L_++;
     for (uint32_t i = 0; i < N_; i++) {
-        uint32_t triple[3] = {0};
-        uint32_t X = ESIs[i];
-        r10_Trip(obj->K, X, triple, obj);
-        uint32_t d = triple[0];
-        uint32_t a = triple[1];
-        uint32_t b = triple[2];
-        uint32_t j_max = fmin((d - 1), (obj->L - 1));
-        while (b >= obj->L)b = (b + a) % L_;
-        set_entry(G_LT, i, b, 1);
-        for (uint j = 1; j <= j_max; j++) {
-            b = (b + a) % L_;
-            while (b >= obj->L)b = (b + a) % L_;
-            set_entry(G_LT, i, b, 1);
-        }
+        LTEncode(obj,G_LT,ESIs[i],i,L_);
     }
 }
-int gaussian_elimination(gf2matrix* mat, uint8_t *result, int size,Raptor10* obj){
-    char dest;
-    for (int i = 0; i < size; i++) {
-        if (!get_entry(mat,i,i)) {
-            for (int j = i + 1; j < size; j++) {
-                if (get_entry(mat,j,i) == 1){
-                    dest = result[j];
-                    result[j] = result[i];
-                    result[i] = dest;
-                    swap_rows(mat,i,j);
-                    break;
-                }
-            }
-        }
-        if (!get_entry(mat,i,i)) return -1;
-        for (int j = 0; j < size; j++) {
-            if (j != i && get_entry(mat,j,i) == 1) {
-                set_entry(mat,j,i,0);
-                printf("j-> %d i -> %d \n",result[j],result[i]);
-                result[j] ^= result[i];
-                printf("%d \n",result[j]);
-            }
-        }
-    }
-    return 0; // Success
-}
-int gaussian_elim(gf2matrix* mat,char* result,int size, Raptor10* obj, int* d){
+
+int gaussian_elim(gf2matrix* mat,char* result, Raptor10* obj, int* d){
     char dest;
     int tmp;
     bool is_start = true;
-    for(int i=0;i<size;i++){
-        is_start = true;
+    stack* stk = stack_build();
+    uint32_t i = 0;
+    for(i=0;i<get_ncols(mat);i++){
         if(!get_entry(mat,i,i)){
-            for(int j=0;j<size;j++){
-                if(i!=j && get_entry(mat,j,i) && (is_start || d[j] <= d[i])){
+            is_start = true;
+            for(int j=i+1;j<get_nrows(mat);j++){
+                if(get_entry(mat,j,i) && (is_start || d[j] <= d[i])){
                     dest = result[i];
                     result[i] = result[j];
                     result[j] = dest;
                     tmp = d[i];
                     d[i] = d[j];
                     d[j] = tmp;
-                    // printf("swap %d %d\n",i,j);
                     swap_rows(mat,i,j);
-                    // print_matrix2(mat,result);
                     is_start = false;
                 }
             }
         }
         if(!d[i]) return -1;
-        for(int j=0;j<size;j++){
-            // printf("j %d i %d d[i] %d \n",j,i,d[i]);
-            if(j != i && get_entry(mat,j,i) && d[i] == 1){
-                // printf("j %d i %d\n",j,i);
-                // printf("xor %d %d\n",i,j);
+        if(d[i]>1){stack_push(stk,i);continue;}
+        for(int j=0;j<get_nrows(mat);j++){
+            if(j != i && get_entry(mat,j,i)){
                 set_entry(mat,j,i,0);
+                result[j]^=result[i];
                 d[j]-=1;
-                result[j] ^= result[i];
-                // print_matrix2(mat,result);
             }
         }
+      print_matrix2(mat,result);
     }
-    return 0;
+    stack_print(stk);
+    while(!stack_ifempty(stk)){
+        i = stack_pop(stk);
+        for(uint32_t j=0;j<get_nrows(mat);j++){
+          if(j != i && get_entry(mat,j,i)){
+              set_entry(mat,j,i,0);
+              result[j]^=result[i];
+              d[j]-=1;
+          }
+      }
+      print_matrix2(mat,result);
+  }
+  return 0;
 } 
 int r10_build_constraints_mat(Raptor10 *obj, gf2matrix *A) {
     r10_build_LDPC_submat(obj->K, obj->S, A);
-    // print_matrix(A);
     r10_build_Half_submat(obj->K, obj->S, obj->H, A);
-    // print_matrix(A);
     for (int i = 0; i < obj->S; i++)
     set_entry(A, i, obj->K + i, 1);
     for (int i = 0; i < obj->H; i++)
     set_entry(A, obj->S + i, obj->K + obj->S + i, 1);
-    // print_matrix(A);
     r10_build_LT_submat(obj->K, obj->S, obj->H, obj, A);
-    // gaussjordan_inv(A);
-    // print_matrix(A);
+    gaussjordan_inv(A);
+    print_matrix(A);
     return 0;
 }
 
@@ -279,52 +214,49 @@ void r10_compute_params(Raptor10 *obj){
 }
 
 void r10_multiplication(Raptor10 *obj, gf2matrix *A, uint8_t *block,uint8_t *res_block) {
-    for (uint j = 0; j < get_ncols(A); j++)
-        for (uint i = 0; i < get_nrows(A); i++)
-            if (get_entry(A, i, j)) {
+    for (uint j = 0; j < get_ncols(A); j++){
+        for (uint i = 0; i < get_nrows(A); i++){
+            if(get_entry(A, i, j)){
                 for (uint t = 0; t < obj->T; t++)
                     res_block[i + t] = res_block[i + t] ^ block[j + t];
-            }
+              }
+          }
+      }
 }
 
 void r10_encode(uint8_t *src_s, uint8_t *enc_s, Raptor10 *obj, gf2matrix *A) {
-    // Multiply constraints matrix with input block to obtain intermediate
-    // symbols
     uint8_t* int_symbols = calloc(sizeof(uint8_t),obj->L);
-    // bzero(int_symbols,obj->L);
-    // Calculate the LT matrix and encoded symbols
     gf2matrix G_LT;
     allocate_gf2matrix(&G_LT, obj->L, obj->N);
-    // Create vector of ESIs
     uint32_t *ESIs =(uint32_t*) malloc(sizeof(uint32_t)*obj->N);
     for (uint32_t i = 0; i < obj->N; i++)ESIs[i] = i;
-    // Build the LT matrix and encode
     r10_build_LT_mat(obj->N, obj, &G_LT, ESIs);
     print_matrix(&G_LT);
     r10_multiplication(obj, &G_LT, src_s, int_symbols);
     for(int i=0;i<obj->L;i++)printf("%d ",int_symbols[i]);
     printf("<-- intermediate done\n");
-    // printf("GLT \n");
-    // print_matrix(&G_LT);
     r10_multiplication(obj, A, int_symbols, enc_s);
     for(int i=0;i<obj->L;i++)printf("%d ",enc_s[i]);
     printf("<-- encrypted done\n");
+}
+void copy_row(Raptor10* obj,gf2matrix* mat1,uint32_t mat1_row,gf2matrix* mat2,uint32_t mat2_row){
+  for(uint32_t i=0;i<mat1->n_words;i++){
+    mat1->rows[mat1_row][i]^=mat2->rows[mat2_row][i];
+  }
 }
 /*
  * Assumptions:
  * src_s data is padded wiht 0 so that len(src_s) == obj->L*obj->T;
  * all parameters of obj (Raptor10) is properly set
- *
     */
-
 void my_encode(uint8_t *src_s,uint8_t* enc_s, Raptor10* obj){
     gf2matrix* A = malloc(sizeof(gf2matrix));
     gf2matrix* G_LT = malloc(sizeof(gf2matrix));
     uint8_t* int_symbols = calloc(sizeof(uint8_t),obj->L*obj->T);
     allocate_gf2matrix(A,obj->L,obj->L);
     r10_build_constraints_mat(obj,A);
-    gaussjordan_inv(A);
     print_matrix(A);
+    bzero(src_s+obj->K,obj->L-obj->K);
     r10_multiplication(obj,A,src_s,int_symbols);
     for(int i=0;i<obj->L;i++)printf("%d ",int_symbols[i]);
     printf("intermediate symbols encode\n");
@@ -333,22 +265,63 @@ void my_encode(uint8_t *src_s,uint8_t* enc_s, Raptor10* obj){
     for(int i=0;i<obj->L;i++)esi[i] = i+obj->K;
     r10_build_LT_mat(obj->L,obj,G_LT,esi);
     print_matrix(G_LT);
+    printf("GLT\n");
     r10_multiplication(obj,G_LT,int_symbols,enc_s);
     for(int i=0;i<obj->L;i++)printf("%d ",enc_s[i]);
     printf("encoded symbols encode\n");
 }
 
+void my_decode(uint8_t* enc_s, Raptor10* obj,uint32_t* ESIs,uint32_t n){
+    gf2matrix* A =malloc(sizeof(gf2matrix));
+    gf2matrix* gauss_mat = malloc(sizeof(gf2matrix));
+    gf2matrix* dummy_row = malloc(sizeof(gf2matrix));
+    allocate_gf2matrix(dummy_row,1,obj->L);
+    allocate_gf2matrix(gauss_mat,n,obj->K);
+    allocate_gf2matrix(A,obj->L,obj->L);
+    r10_build_constraints_mat(obj,A);  
+    uint32_t L_ = obj->L;
+    while(!is_prime(L_))L_++;
+    uint32_t* d = calloc(sizeof(uint32_t),n);
+    for(int i=0;i<n;i++){
+        printf("i %d data %d\n",i,enc_s[i]);
+        if( ESIs[i] < obj->K ){
+            d[i] = 1;
+            set_entry(gauss_mat,i,ESIs[i],1);
+        }
+        else{
+            LTEncode(obj,dummy_row,ESIs[i],0,L_);
+            print_matrix2(dummy_row,enc_s);
+            printf("step 1\n");
+            for(int j=0;j<obj->L;j++){
+                if(get_entry(dummy_row,0,j)){
+                    printf("copy %d %d \n",i,j);
+                    copy_row(obj,gauss_mat,i,A,j);
+                    print_matrix2(gauss_mat,enc_s);
+                }
+            }
+            print_matrix2(gauss_mat,enc_s);
+            printf("step 2\n");
+            for(uint32_t j=0;j<gauss_mat->n_words;j++){
+                d[i]+= __builtin_popcount(gauss_mat->rows[i][j]);
+              printf("gauss_mat->rows[0][j] = %d\n", gauss_mat->rows[i][j]);
+            }
+            for(uint32_t p=0;p<dummy_row->n_words;p++)dummy_row->rows[0][p]=0;
+            print_matrix2(dummy_row,enc_s);
+            printf("Done d %d\n",d[i]);
+        }
+      print_matrix2(gauss_mat,enc_s);
+    }
+    printf("gaussian_elimination\n");
+    printf("elim = > %d\n",gaussian_elim(gauss_mat,enc_s,obj,d));
+    for(int i=0;i<obj->K;i++)printf("%c ",enc_s[i]);
+}
 
 void r10_decode(uint8_t *enc_s, uint8_t *dec_s, Raptor10 *obj, gf2matrix *A,uint32_t N_,uint32_t* ESIs) {
-    // Calculate intermediate symbols
-    // Build constraint matrix
-    // To check if r10_build_constraints_mat relies on a already defined N !!!!
     gaussjordan_inv(A);
     uint8_t* int_symbols = (uint8_t*) calloc(obj->L, sizeof(uint8_t));
     r10_multiplication(obj, A, enc_s, int_symbols);
     for(int i=0;i<obj->L;i++)printf("%d ",int_symbols[i]);
     printf("<-- decode intermediate \n");
-    // Calculate the LT matrix and encoded symbols
     // gf2matrix G_LT;
     // allocate_gf2matrix(&G_LT, obj->L, obj->K);
     // Build the LT matrix and decode
