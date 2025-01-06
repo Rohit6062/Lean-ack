@@ -6,7 +6,8 @@ int main() {
   srand(time(NULL));
   printf("Testing gf2matrix\n");
   Raptor10 coder;
-  char* data = "ranaware";
+  // char* data = "this_is_some_data_to_test";
+    char* data = "rohit";
   unsigned int K = strlen(data);
   coder.K = K;
   coder.Kmin = 1024;
@@ -20,7 +21,7 @@ int main() {
   uint8_t* enc_s = (uint8_t*) calloc(sizeof(uint8_t),coder.L*coder.T);
   strcpy(src_s,data);
   printf("%s\n",src_s);
-  printf("K=%u, S=%u, H=%u, L=%u\n", coder.K, coder.S, coder.H, coder.L);
+  printf("K=%u, S=%u, H=%u, L=%u ,W=%u P=%u", coder.K, coder.S, coder.H, coder.L,coder.W,coder.P);
   my_encode(src_s,enc_s,&coder);
   uint32_t N = coder.K + 3;
   uint8_t* rec_s = (uint8_t*) malloc(sizeof(uint8_t)*N);

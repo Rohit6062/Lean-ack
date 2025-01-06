@@ -148,8 +148,9 @@ int gaussian_elim(gf2matrix* mat,char* result, Raptor10* obj, int* d){
     char dest;
     int tmp;
     bool is_start = true;
-    stack* stk = stack_build();
+    queue* stk = queue_build();
     uint32_t i = 0;
+    uint32_t* counter = (uint32_t*) calloc(sizeof(uint32_t),get_nrows(mat));
     for(i=0;i<get_ncols(mat);i++){
         if(!get_entry(mat,i,i)){
             is_start = true;
@@ -167,7 +168,7 @@ int gaussian_elim(gf2matrix* mat,char* result, Raptor10* obj, int* d){
             }
         }
         if(!d[i]) return -1;
-        if(d[i]>1){stack_push(stk,i);continue;}
+        if(d[i]>1){queue_push(stk,i);continue;}
         for(int j=0;j<get_nrows(mat);j++){
             if(j != i && get_entry(mat,j,i)){
                 set_entry(mat,j,i,0);
@@ -175,11 +176,18 @@ int gaussian_elim(gf2matrix* mat,char* result, Raptor10* obj, int* d){
                 d[j]-=1;
             }
         }
-      print_matrix2(mat,result);
     }
-    stack_print(stk);
-    while(!stack_ifempty(stk)){
-        i = stack_pop(stk);
+  print_matrix2(mat,result);
+    printf("queue===============================\n");
+    queue_display(stk);
+    while(!queue_isempty(stk)){
+        i = queue_pop(stk);
+        if(counter[i]>5)continue;
+        counter[i]++;
+        if(d[i]>1){
+            queue_push(stk,i);
+            continue;
+        }
         for(uint32_t j=0;j<get_nrows(mat);j++){
           if(j != i && get_entry(mat,j,i)){
               set_entry(mat,j,i,0);

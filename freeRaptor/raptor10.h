@@ -1,27 +1,3 @@
-/*
- *  Copyright 2020 Roberto Francescon
- *  This file is part of freeRaptor.
- *
- *  freeRaptor is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *  freeRaptor is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with freeRaptor.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-/**
- * @author  Roberto Francescon
- * @brief   Definition of fields, structures and functions for the
- *          implementation of Raptor10 FEC codes
- * @version 0.0.1
- * @file    raptor10.h
- */
 #ifndef RAPTOR10_H
 #define RAPTOR10_H
 
@@ -29,9 +5,8 @@
 #include <stdlib.h>
 #include<strings.h>
 #include "gf2matrix.h"
-#include "stack.h"
+#include "queue.h"
 #include "raptor_consts.h" // J, C1 and C2
-
 /** Type symbols is a Raptor 10 symbol: a K bytes array*/
 typedef uint8_t *Symbol;
 
