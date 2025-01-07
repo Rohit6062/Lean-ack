@@ -19,5 +19,6 @@ int main()
         buffer2[n]=0;
         printf("recieved %d\n",n);
         raptor_print(buffer2,n);
+        sleep(1);
     }
 }
