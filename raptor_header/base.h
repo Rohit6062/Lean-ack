@@ -2,7 +2,8 @@
 #define BASE_H
 #define MAXLINE 4096
 #define LISTENQ 107
-#define SERV_PORT 5053
+#define SERV_PORT_RECEIVE 5053
+#define SERV_PORT_SEND 5054
 #define Bufflen (1<<16)-1
 typedef struct sockaddr SA;
 typedef unsigned char byte;
@@ -79,17 +80,68 @@ typedef struct{
 }sockinfo;
 
 void err_quit(char*);
+bool checksum(byte* data,uint32_t len);
+void raptor_print(byte* a,uint32_t n);
+socklen_t setup_recieve_socket(uint16_t serv_port);
+sockinfo* raptor_build_sockinfo();
+sockinfo* raptor_accept_req();
+void setup_send_socket(char* serv_addr_str,uint16_t serv_port,struct sockaddr_in* serv_addr,socklen_t* sock_fd);
 
+// print error and exit the process
 void err_quit(char* str){
     perror(str);
     exit(0);
 }
+
+// calculate and return checksum
 bool checksum(byte* data,uint32_t len){
     byte out=0;
     for(uint32_t i=0;i<len;i++) out += __builtin_popcount(data[i]) % 2;   
     return out%2+1;
 }
+
+// printf buffer irrispective of 0
 void raptor_print(byte* a,uint32_t n){
+    printf("raptor print:\n");
     for(uint32_t i=0;i<n;i++)printf("%c",a[i]);
     printf("\n");
+}
+
+// returns sock_fd for reciving on given port
+socklen_t setup_recieve_socket(uint16_t serv_port){
+    socklen_t output;
+    struct sockaddr_in serv_addr;
+    bzero(&serv_addr,sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = htons(INADDR_ANY);
+    serv_addr.sin_port = htons(serv_port);
+    if((output = socket(AF_INET,SOCK_DGRAM,0))==-1)err_quit("socket");
+    if(bind(output,(SA*)&serv_addr,sizeof(serv_addr))==-1)err_quit("bind");
+    return output;
+}
+
+// initialize (malloc) sockinfo 
+sockinfo* raptor_build_sockinfo(){
+    sockinfo* output = (sockinfo*) malloc(sizeof(sockinfo));
+    output->send_addr = (struct sockaddr_in*) malloc(sizeof(struct sockaddr_in));
+    bzero(output->send_addr,sizeof(output->send_addr));
+    return output;
+}
+// typedef struct{
+//     FILE* fp;
+//     socklen_t send_fd;
+//     struct sockaddr_in* send_addr;
+//     socklen_t send_addr_len;
+//     socklen_t recieve_fd;
+// }sockinfo;
+
+
+void setup_send_socket(char* serv_addr_str,uint16_t serv_port,struct sockaddr_in* serv_addr,socklen_t* sock_fd){
+    if(!serv_addr){printf("serv_addr ia nill\n");return;}
+    bzero(serv_addr,sizeof(serv_addr));
+    serv_addr->sin_family = AF_INET;
+    serv_addr->sin_port = htons(serv_port);
+    if(inet_pton(AF_INET,serv_addr_str,(SA*)&serv_addr->sin_addr)==-1)err_quit("inet setup_send_socket");
+    if((*sock_fd = socket(AF_INET,SOCK_DGRAM,0))==-1)err_quit("socket setup_send_socket");
+    return;
 }
