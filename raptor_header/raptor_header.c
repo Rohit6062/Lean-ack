@@ -8,6 +8,12 @@ void generate_gray_seq(uint32_t *gray_seq) {
     gray_seq[i] = i ^ (uint32_t)(floor(i / 2));
 }
 
+void xor(byte* result,byte* a,byte* b,uint32_t n){
+    for(uint32_t i=0;i<n;i++){
+      result[i] = a[i] ^ b[i];
+  }
+}
+
 int factorial(int n) {
   int result = 1, i;
 
@@ -151,14 +157,15 @@ int gaussian_elim(gf2matrix* mat,char* result, raptor* obj, int* d){
     queue* stk = queue_build();
     uint32_t i = 0;
     uint32_t* counter = (uint32_t*) calloc(sizeof(uint32_t),get_nrows(mat));
+    byte* temp_buffer = (byte*)calloc(sizeof(byte)*obj->T);
     for(i=0;i<get_ncols(mat);i++){
         if(!get_entry(mat,i,i)){
             is_start = true;
             for(int j=i+1;j<get_nrows(mat);j++){
                 if(get_entry(mat,j,i) && (is_start || d[j] <= d[i])){
-                    dest = result[i];
-                    result[i] = result[j];
-                    result[j] = dest;
+                    strcpy(temp_buffer,result[i],obj->T);
+                    strcpy(result[j],result[i],obj->T);
+                    strcpy(result[i],temp_buffer);
                     tmp = d[i];
                     d[i] = d[j];
                     d[j] = tmp;
@@ -172,12 +179,13 @@ int gaussian_elim(gf2matrix* mat,char* result, raptor* obj, int* d){
         for(int j=0;j<get_nrows(mat);j++){
             if(j != i && get_entry(mat,j,i)){
                 set_entry(mat,j,i,0);
-                result[j]^=result[i];
+                // result[j]^=result[i];
+                xor(result[j],result[j],result[i],obj->T);
                 d[j]-=1;
             }
         }
     }
-  print_matrix2(mat,result);
+    print_matrix2(mat,result);
     queue_display(stk);
     while(!queue_isempty(stk)){
         i = queue_pop(stk);
@@ -190,7 +198,8 @@ int gaussian_elim(gf2matrix* mat,char* result, raptor* obj, int* d){
         for(uint32_t j=0;j<get_nrows(mat);j++){
           if(j != i && get_entry(mat,j,i)){
               set_entry(mat,j,i,0);
-              result[j]^=result[i];
+              xor(result[j],result[j],result[i],obj->T);
+              // result[j]^=result[i];
               d[j]-=1;
           }
       }
@@ -198,7 +207,7 @@ int gaussian_elim(gf2matrix* mat,char* result, raptor* obj, int* d){
   }
   return 0;
 } 
-int raptor_build_constraints_mat(raptor *obj, gf2matrix *A) {
+int raptor_build_constraints_mat(raptor *obj, gf2matrix *A){
     raptor_build_LDPC_submat(obj->K, obj->S, A);
     raptor_build_Half_submat(obj->K, obj->S, obj->H, A);
     for (int i = 0; i < obj->S; i++)

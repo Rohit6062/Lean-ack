@@ -66,7 +66,6 @@ raptor* build_raptor(unsigned long file_size){
     out->Gmax = 10;
     out->Al = 4;
     out->P = 65200;
-    
 }
 
 /**

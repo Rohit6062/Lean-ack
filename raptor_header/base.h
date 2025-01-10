@@ -28,6 +28,7 @@ typedef unsigned char byte;
 #include<sys/un.h>
 #include<stdint.h>
 #include"gf2matrix.h"
+#include "raptor_header.h"
 
 
 #ifdef HAVE_SYS_SELECT_H
@@ -74,6 +75,7 @@ typedef unsigned char byte;
  */
 typedef struct{
     FILE* fp;
+    uint32_t file_size;
     socklen_t send_fd;
     struct sockaddr_in* send_addr;
     socklen_t send_addr_len;

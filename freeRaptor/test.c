@@ -8,7 +8,7 @@ int main() {
   Raptor10 coder;
   // char* data = "this_is_some_data_to_test";
     char* data = "rohit";
-  unsigned int K = strlen(data);
+  unsigned int K = 128;
   coder.K = K;
   coder.Kmin = 1024;
   coder.Kmax = 8192;
