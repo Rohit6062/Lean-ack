@@ -7,7 +7,7 @@
 #include "gf2matrix.h"
 #include "queue.h"
 #include "raptor_consts.h" // J, C1 and C2
-typedef uint8_t *Symbol;
+typedef unsigned char byte;
 
 /**
  * Struct containing all the fileds needed by the raptor code to operate
@@ -25,17 +25,10 @@ typedef uint8_t *Symbol;
  * @var raptor::Kmin minimum target on the number of symbols per source block
  * @var raptor::Gmax maximum target number of symbols per packet
  * @var raptor::K denotes the number of symbols in a single source block
- * @var raptor::L denotes the number of pre-coding symbols for a single
- * source block
- * @var raptor::S denotes the number of LDPC symbols for a single source
- * block
- * @var raptor::H denotes the number of Half symbols for a single source
- * block
+ * @var raptor::L denotes the number of pre-coding symbols for a single source block
+ * @var raptor::S denotes the number of LDPC symbols for a single source block
+ * @var raptor::H denotes the number of Half symbols for a single source block
  * @var raptor::G the number of symbols within an encoding symbol group
- * @var raptor::C denotes an array of intermediate symbols, C[0], C[1],
- * C[2],..., C[L-1]
- * @var raptor::C_ denotes an array of source symbols, C’[0], C’[1],
- * C’[2],..., C’[K-1]
  */
 typedef struct {
   uint32_t F;
@@ -53,8 +46,6 @@ typedef struct {
   uint32_t S;
   uint32_t H;
   uint32_t G;
-  uint8_t *C;
-  uint8_t *Cp;
 } raptor;
 
 raptor* build_raptor(unsigned long file_size){
@@ -164,8 +155,8 @@ void raptor_compute_params(raptor *obj);
  * @param block array of symbols to right multiply
  * @param res_block return param with the resulting symbols
  */
-void raptor_multiplication(raptor *obj, gf2matrix *A, uint8_t *block,
-                        uint8_t *res_block);
+// void raptor_multiplication(raptor *obj, gf2matrix *A, uint8_t *block,
+void raptor_multiplication(raptor *obj, gf2matrix *A, byte **block,byte** res_block);
 
 /**
  * Encoding function
@@ -189,6 +180,11 @@ void my_decode(uint8_t* enc_s, raptor* obj,uint32_t* ESIs,uint32_t n);
  */
 void raptor_decode(uint8_t *enc_s, uint8_t *dec_s, raptor *obj, gf2matrix *A,uint32_t N_, uint32_t *ESIs);
 int gaussian_elimination(gf2matrix* mat, uint8_t *result, int size,raptor* obj);
-int gaussian_elim(gf2matrix* mat, char *result,raptor* obj,int*);
+int gaussian_elim(gf2matrix* mat, byte** result,raptor* obj,int*);
+
+byte** rapter_generate_intermediate_symb(raptor* obj,byte** data);
+
+
+void xor(byte* result,byte* a,byte* b,uint32_t n);
 void LTEncode(raptor* obj,gf2matrix* mat,uint32_t x, uint32_t row_index ,uint32_t L_);
 #endif

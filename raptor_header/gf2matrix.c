@@ -1,22 +1,4 @@
-/*
- *  Copyright 2020 Roberto Francescon
- *  Copyright 2022 Dominik Danelski
- *  This file is part of freeRaptor.
- *
- *  freeRaptor is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *  freeRaptor is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with freeRaptor.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#include <gf2matrix.h>
+#include "gf2matrix.h"
 #include <math.h>
 
 #define min(a, b)                                                              \
@@ -32,23 +14,22 @@ uint32_t wordshift = 5;
 
 void allocate_gf2matrix(gf2matrix *mat, uint32_t n_rows, uint32_t n_cols) {
     printf("allocating %d rows and %d cols\n",n_rows,n_cols);
-  mat->n_rows = n_rows;
-  mat->n_cols = n_cols;
-  mat->n_words = (mat->n_cols + wordsize - 1) >> wordshift;
-  mat->rows = (word **)malloc(mat->n_rows * sizeof(word *));
+    mat->n_rows = n_rows;
+    mat->n_cols = n_cols;
+    mat->n_words = (mat->n_cols + wordsize - 1) >> wordshift;
+    mat->rows = (word **)malloc(mat->n_rows * sizeof(word *));
 
-  for (int i = 0; i <= mat->n_rows; i++) {
-    mat->rows[i] = (word *)malloc(mat->n_words);
-    memset(mat->rows[i], 0, mat->n_words);
-  }
-  mat->m_data = (word *)mat->rows[0];
+    for (int i = 0; i <= mat->n_rows; i++) {
+        mat->rows[i] = (word *)malloc(mat->n_words);
+        memset(mat->rows[i], 0, mat->n_words);
+    }
+    mat->m_data = (word *)mat->rows[0];
 }
 
 void dealloc_gf2matrix(gf2matrix *mat) {
-  for (int i = 0; i <= mat->n_rows; i++)
-    free(mat->rows[i]);
-
-  free(mat->rows);
+    for (int i = 0; i <= mat->n_rows; i++)
+        free(mat->rows[i]);
+    free(mat->rows);
 }
 
 uint32_t get_nrows(gf2matrix *mat) { return mat->n_rows; }

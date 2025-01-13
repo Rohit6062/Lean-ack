@@ -28,7 +28,6 @@ int is_prime(uint32_t n) {
     return 0;
 
   for (uint32_t i = 2; i * i <= n; i++)
-    if (!(n % i))
       return 0;
 
   return 1;
@@ -150,22 +149,22 @@ void raptor_build_LT_mat(uint32_t N_, raptor *obj, gf2matrix *G_LT,uint32_t *ESI
     }
 }
 
-int gaussian_elim(gf2matrix* mat,char* result, raptor* obj, int* d){
+int gaussian_elim(gf2matrix* mat,byte** result, raptor* obj, int* d){
     char dest;
     int tmp;
     bool is_start = true;
     queue* stk = queue_build();
     uint32_t i = 0;
     uint32_t* counter = (uint32_t*) calloc(sizeof(uint32_t),get_nrows(mat));
-    byte* temp_buffer = (byte*)calloc(sizeof(byte)*obj->T);
+    byte* temp_buffer = (byte*)calloc(sizeof(byte),obj->T);
     for(i=0;i<get_ncols(mat);i++){
         if(!get_entry(mat,i,i)){
             is_start = true;
             for(int j=i+1;j<get_nrows(mat);j++){
                 if(get_entry(mat,j,i) && (is_start || d[j] <= d[i])){
-                    strcpy(temp_buffer,result[i],obj->T);
-                    strcpy(result[j],result[i],obj->T);
-                    strcpy(result[i],temp_buffer);
+                    strncpy(temp_buffer,result[i],obj->T);
+                    strncpy(result[j],result[i],obj->T);
+                    strncpy(result[i],temp_buffer,obj->T);
                     tmp = d[i];
                     d[i] = d[j];
                     d[j] = tmp;
@@ -185,7 +184,7 @@ int gaussian_elim(gf2matrix* mat,char* result, raptor* obj, int* d){
             }
         }
     }
-    print_matrix2(mat,result);
+    // print_matrix2(mat,result);
     queue_display(stk);
     while(!queue_isempty(stk)){
         i = queue_pop(stk);
@@ -203,7 +202,7 @@ int gaussian_elim(gf2matrix* mat,char* result, raptor* obj, int* d){
               d[j]-=1;
           }
       }
-      print_matrix2(mat,result);
+      // print_matrix2(mat,result);
   }
   return 0;
 } 
@@ -229,31 +228,12 @@ void raptor_compute_params(raptor *obj){
     obj->L = obj->K + obj->S + obj->H;
 }
 
-void raptor_multiplication(raptor *obj, gf2matrix *A, uint8_t *block,uint8_t *res_block) {
+void raptor_multiplication(raptor *obj, gf2matrix *A, byte **block,byte** res_block) {
     for (uint j = 0; j < get_ncols(A); j++){
         for (uint i = 0; i < get_nrows(A); i++){
-            if(get_entry(A, i, j)){
-                for (uint t = 0; t < obj->T; t++)
-                    res_block[i + t] = res_block[i + t] ^ block[j + t];
-              }
-          }
-      }
-}
-
-void raptor_encode(uint8_t *src_s, uint8_t *enc_s, raptor *obj, gf2matrix *A) {
-    uint8_t* int_symbols = calloc(sizeof(uint8_t),obj->L);
-    gf2matrix G_LT;
-    allocate_gf2matrix(&G_LT, obj->L, obj->N);
-    uint32_t *ESIs =(uint32_t*) malloc(sizeof(uint32_t)*obj->N);
-    for (uint32_t i = 0; i < obj->N; i++)ESIs[i] = i;
-    raptor_build_LT_mat(obj->N, obj, &G_LT, ESIs);
-    print_matrix(&G_LT);
-    raptor_multiplication(obj, &G_LT, src_s, int_symbols);
-    for(int i=0;i<obj->L;i++)printf("%d ",int_symbols[i]);
-    printf("<-- intermediate done\n");
-    raptor_multiplication(obj, A, int_symbols, enc_s);
-    for(int i=0;i<obj->L;i++)printf("%d ",enc_s[i]);
-    printf("<-- encrypted done\n");
+            if(get_entry(A, i,j))xor(res_block[i],res_block[i],block[j],obj->T);
+        }
+    }
 }
 void copy_row(raptor* obj,gf2matrix* mat1,uint32_t mat1_row,gf2matrix* mat2,uint32_t mat2_row){
   for(uint32_t i=0;i<mat1->n_words;i++){
@@ -265,85 +245,94 @@ void copy_row(raptor* obj,gf2matrix* mat1,uint32_t mat1_row,gf2matrix* mat2,uint
  * src_s data is padded wiht 0 so that len(src_s) == obj->L*obj->T;
  * all parameters of obj (raptor) is properly set
     */
-void my_encode(uint8_t *src_s,uint8_t* enc_s, raptor* obj){
+// void my_encode(uint8_t *src_s,uint8_t* enc_s, raptor* obj){
+//     gf2matrix* A = malloc(sizeof(gf2matrix));
+//     gf2matrix* G_LT = malloc(sizeof(gf2matrix));
+//     uint8_t* int_symbols = calloc(sizeof(uint8_t),obj->L*obj->T);
+//     allocate_gf2matrix(A,obj->L,obj->L);
+//     raptor_build_constraints_mat(obj,A);
+//     print_matrix(A);
+//     bzero(src_s+obj->K,obj->L-obj->K);
+//     raptor_multiplication(obj,A,src_s,int_symbols);
+//     for(int i=0;i<obj->L;i++)printf("%d ",int_symbols[i]);
+//     printf("intermediate symbols encode\n");
+//     allocate_gf2matrix(G_LT,obj->L,obj->L);
+//     uint32_t* esi = (uint32_t*) malloc(sizeof(uint32_t)*obj->L);
+//     for(int i=0;i<obj->L;i++)esi[i] = i+obj->K;
+//     raptor_build_LT_mat(obj->L,obj,G_LT,esi);
+//     print_matrix(G_LT);
+//     printf("GLT\n");
+//     raptor_multiplication(obj,G_LT,int_symbols,enc_s);
+//     for(int i=0;i<obj->L;i++)printf("%d ",enc_s[i]);
+//     printf("encoded symbols encode\n");
+// }
+// void my_decode(uint8_t* enc_s, raptor* obj,uint32_t* ESIs,uint32_t n){
+//     gf2matrix* A =malloc(sizeof(gf2matrix));
+//     gf2matrix* gauss_mat = malloc(sizeof(gf2matrix));
+//     gf2matrix* dummy_row = malloc(sizeof(gf2matrix));
+//     allocate_gf2matrix(dummy_row,1,obj->L);
+//     allocate_gf2matrix(gauss_mat,n,obj->K);
+//     allocate_gf2matrix(A,obj->L,obj->L);
+//     raptor_build_constraints_mat(obj,A);  
+//     uint32_t L_ = obj->L;
+//     while(!is_prime(L_))L_++;
+//     uint32_t* d = calloc(sizeof(uint32_t),n);
+//     for(int i=0;i<n;i++){
+//         printf("i %d data %d\n",i,enc_s[i]);
+//         if( ESIs[i] < obj->K ){
+//             d[i] = 1;
+//             set_entry(gauss_mat,i,ESIs[i],1);
+//         }
+//         else{
+//             LTEncode(obj,dummy_row,ESIs[i],0,L_);
+//             print_matrix2(dummy_row,enc_s);
+//             printf("step 1\n");
+//             for(int j=0;j<obj->L;j++){
+//                 if(get_entry(dummy_row,0,j)){
+//                     printf("copy %d %d \n",i,j);
+//                     copy_row(obj,gauss_mat,i,A,j);
+//                     print_matrix2(gauss_mat,enc_s);
+//                 }
+//             }
+//             print_matrix2(gauss_mat,enc_s);
+//             printf("step 2\n");
+//             for(uint32_t j=0;j<gauss_mat->n_words;j++){
+//                 d[i]+= __builtin_popcount(gauss_mat->rows[i][j]);
+//               printf("gauss_mat->rows[0][j] = %d\n", gauss_mat->rows[i][j]);
+//             }
+//             for(uint32_t p=0;p<dummy_row->n_words;p++)dummy_row->rows[0][p]=0;
+//             print_matrix2(dummy_row,enc_s);
+//             printf("Done d %d\n",d[i]);
+//         }
+//       print_matrix2(gauss_mat,enc_s);
+//     }
+//     printf("gaussian_elimination\n");
+//     printf("elim = > %d\n",gaussian_elim(gauss_mat,enc_s,obj,d));
+//     for(int i=0;i<obj->K;i++)printf("%c ",enc_s[i]);
+// }
+
+// void raptor_decode(uint8_t *enc_s, uint8_t *dec_s, raptor *obj, gf2matrix *A,uint32_t N_,uint32_t* ESIs) {
+//     gaussjordan_inv(A);
+//     uint8_t* int_symbols = (uint8_t*) calloc(obj->L, sizeof(uint8_t));
+//     raptor_multiplication(obj, A, enc_s, int_symbols);
+//     for(int i=0;i<obj->L;i++)printf("%d ",int_symbols[i]);
+//     printf("<-- decode intermediate \n");
+//     // gf2matrix G_LT;
+//     // allocate_gf2matrix(&G_LT, obj->L, obj->K);
+//     // Build the LT matrix and decode
+//     // raptor_build_LT_mat(N_, obj, &G_LT, ESIs);
+//     // gaussjordan_inv(&G_LT);
+//     // print_matrix(&G_LT);
+//     raptor_multiplication(obj, A, int_symbols, dec_s);
+//     for(int i=0;i<obj->K;i++)printf("%c ",dec_s[i]);
+// }
+
+byte** rapter_generate_intermediate_symb(raptor* obj,byte** data){
     gf2matrix* A = malloc(sizeof(gf2matrix));
-    gf2matrix* G_LT = malloc(sizeof(gf2matrix));
-    uint8_t* int_symbols = calloc(sizeof(uint8_t),obj->L*obj->T);
+    byte** output = (byte**) malloc(sizeof(byte*)*obj->L);
+    for(int i=0;i<obj->L;i++)output[i] = (byte*)malloc(sizeof(byte)*obj->T);
     allocate_gf2matrix(A,obj->L,obj->L);
     raptor_build_constraints_mat(obj,A);
-    print_matrix(A);
-    bzero(src_s+obj->K,obj->L-obj->K);
-    raptor_multiplication(obj,A,src_s,int_symbols);
-    for(int i=0;i<obj->L;i++)printf("%d ",int_symbols[i]);
-    printf("intermediate symbols encode\n");
-    allocate_gf2matrix(G_LT,obj->L,obj->L);
-    uint32_t* esi = (uint32_t*) malloc(sizeof(uint32_t)*obj->L);
-    for(int i=0;i<obj->L;i++)esi[i] = i+obj->K;
-    raptor_build_LT_mat(obj->L,obj,G_LT,esi);
-    print_matrix(G_LT);
-    printf("GLT\n");
-    raptor_multiplication(obj,G_LT,int_symbols,enc_s);
-    for(int i=0;i<obj->L;i++)printf("%d ",enc_s[i]);
-    printf("encoded symbols encode\n");
-}
-
-void my_decode(uint8_t* enc_s, raptor* obj,uint32_t* ESIs,uint32_t n){
-    gf2matrix* A =malloc(sizeof(gf2matrix));
-    gf2matrix* gauss_mat = malloc(sizeof(gf2matrix));
-    gf2matrix* dummy_row = malloc(sizeof(gf2matrix));
-    allocate_gf2matrix(dummy_row,1,obj->L);
-    allocate_gf2matrix(gauss_mat,n,obj->K);
-    allocate_gf2matrix(A,obj->L,obj->L);
-    raptor_build_constraints_mat(obj,A);  
-    uint32_t L_ = obj->L;
-    while(!is_prime(L_))L_++;
-    uint32_t* d = calloc(sizeof(uint32_t),n);
-    for(int i=0;i<n;i++){
-        printf("i %d data %d\n",i,enc_s[i]);
-        if( ESIs[i] < obj->K ){
-            d[i] = 1;
-            set_entry(gauss_mat,i,ESIs[i],1);
-        }
-        else{
-            LTEncode(obj,dummy_row,ESIs[i],0,L_);
-            print_matrix2(dummy_row,enc_s);
-            printf("step 1\n");
-            for(int j=0;j<obj->L;j++){
-                if(get_entry(dummy_row,0,j)){
-                    printf("copy %d %d \n",i,j);
-                    copy_row(obj,gauss_mat,i,A,j);
-                    print_matrix2(gauss_mat,enc_s);
-                }
-            }
-            print_matrix2(gauss_mat,enc_s);
-            printf("step 2\n");
-            for(uint32_t j=0;j<gauss_mat->n_words;j++){
-                d[i]+= __builtin_popcount(gauss_mat->rows[i][j]);
-              printf("gauss_mat->rows[0][j] = %d\n", gauss_mat->rows[i][j]);
-            }
-            for(uint32_t p=0;p<dummy_row->n_words;p++)dummy_row->rows[0][p]=0;
-            print_matrix2(dummy_row,enc_s);
-            printf("Done d %d\n",d[i]);
-        }
-      print_matrix2(gauss_mat,enc_s);
-    }
-    printf("gaussian_elimination\n");
-    printf("elim = > %d\n",gaussian_elim(gauss_mat,enc_s,obj,d));
-    for(int i=0;i<obj->K;i++)printf("%c ",enc_s[i]);
-}
-
-void raptor_decode(uint8_t *enc_s, uint8_t *dec_s, raptor *obj, gf2matrix *A,uint32_t N_,uint32_t* ESIs) {
-    gaussjordan_inv(A);
-    uint8_t* int_symbols = (uint8_t*) calloc(obj->L, sizeof(uint8_t));
-    raptor_multiplication(obj, A, enc_s, int_symbols);
-    for(int i=0;i<obj->L;i++)printf("%d ",int_symbols[i]);
-    printf("<-- decode intermediate \n");
-    // gf2matrix G_LT;
-    // allocate_gf2matrix(&G_LT, obj->L, obj->K);
-    // Build the LT matrix and decode
-    // raptor_build_LT_mat(N_, obj, &G_LT, ESIs);
-    // gaussjordan_inv(&G_LT);
-    // print_matrix(&G_LT);
-    raptor_multiplication(obj, A, int_symbols, dec_s);
-    for(int i=0;i<obj->K;i++)printf("%c ",dec_s[i]);
+    raptor_multiplication(obj,A,data,output);
+    return output;
 }

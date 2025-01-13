@@ -58,33 +58,9 @@ typedef struct {
   uint8_t *Cp;
 } Raptor10;
 
-/**
- * Factorial function
- * @param n number of which to make the factorial
- * @return the factorial
- */
 int factorial(int n);
-
-/**
- * Determine whether the provided number is prime or not
- * @param n number to test for primeness
- * @return 1 if the provided number is prime, 0 otherwise
- */
 int is_prime(uint32_t n);
-
-/**
- * Choose: binomial choosing among numbers
- * @param i first number
- * @param i second number
- * @return binomial
- */
 int choose(int i, int j);
-
-/**
- * Rand function generate pseudo-random numbers
- * The output is an integer between 0 and m-1. V0 and V1 are arrays of 4-bytes
- * values.
- */
 uint32_t r10_Rand(uint32_t X, uint32_t i, uint32_t m);
 
 /**

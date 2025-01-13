@@ -1,30 +1,3 @@
-/*
- *  Copyright 2020 Roberto Francescon
- *  Copyright 2022 Dominik Danelski
- *  This file is part of freeRaptor.
- *
- *  freeRaptor is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *  freeRaptor is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with freeRaptor.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-/**
- * @author  Roberto Francescon
- * @author  Dominik Danelski (Etua)
- * @brief   Definition and implementation of Galois Field GF(2) matrices
- *          and vectors
- * @version 0.0.1
- * @file    gf2matrix.h
- */
-
 #ifndef GF2MATRIX_H
 #define GF2MATRIX_H
 
