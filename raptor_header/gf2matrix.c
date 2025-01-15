@@ -19,7 +19,7 @@ void allocate_gf2matrix(gf2matrix *mat, uint32_t n_rows, uint32_t n_cols) {
     mat->n_words = (mat->n_cols + wordsize - 1) >> wordshift;
     mat->rows = (word **)malloc(mat->n_rows * sizeof(word *));
 
-    for (int i = 0; i <= mat->n_rows; i++) {
+    for (uint32_t i = 0; i <= mat->n_rows; i++) {
         mat->rows[i] = (word *)malloc(mat->n_words);
         memset(mat->rows[i], 0, mat->n_words);
     }
@@ -27,7 +27,7 @@ void allocate_gf2matrix(gf2matrix *mat, uint32_t n_rows, uint32_t n_cols) {
 }
 
 void dealloc_gf2matrix(gf2matrix *mat) {
-    for (int i = 0; i <= mat->n_rows; i++)
+    for (uint32_t i = 0; i <= mat->n_rows; i++)
         free(mat->rows[i]);
     free(mat->rows);
 }
@@ -61,8 +61,8 @@ void print_matrix(gf2matrix *mat) {
   uint32_t nrows = get_nrows(mat);
   uint32_t ncols = get_ncols(mat);
     printf("nrows %d cols %d \n",nrows,ncols);
-  for (int i = 0; i < nrows; i++) {
-    for (int j = 0; j < ncols; j++)
+  for (uint32_t i = 0; i < nrows; i++) {
+    for (uint32_t j = 0; j < ncols; j++)
       printf("%d ", get_entry(mat, i, j));
     printf("\n");
   }
@@ -72,8 +72,8 @@ void print_matrix2(gf2matrix *mat,char* res) {
   uint32_t nrows = get_nrows(mat);
   uint32_t ncols = get_ncols(mat);
     printf("nrows %d cols %d \n",nrows,ncols);
-  for (int i = 0; i < nrows; i++) {
-    for (int j = 0; j < ncols; j++)
+  for (uint32_t i = 0; i < nrows; i++) {
+    for (uint32_t j = 0; j < ncols; j++)
       printf("%d ", get_entry(mat, i, j));
     printf("%d ",res[i]);
     printf("\n");
@@ -85,7 +85,7 @@ void print_matrix2(gf2matrix *mat,char* res) {
 void swap_cols(gf2matrix *mat, int m, int k) {
   uint32_t nrows = get_nrows(mat);
 
-  for (int i = 0; i < nrows; i++) {
+  for (uint32_t i = 0; i < nrows; i++) {
     int tmp_val = get_entry(mat, i, m);
     set_entry(mat, i, m, get_entry(mat, i, k));
     set_entry(mat, i, k, tmp_val);
@@ -95,7 +95,7 @@ void swap_cols(gf2matrix *mat, int m, int k) {
 void create_identity_matrix(gf2matrix *identity, uint32_t ncols,
                             uint32_t nrows) {
   allocate_gf2matrix(identity, nrows, ncols);
-  for (int i = 0; i < min(ncols, nrows); i++)
+  for (uint32_t i = 0; i < min(ncols, nrows); i++)
     set_entry(identity, i, i, 1);
 }
 
@@ -104,11 +104,11 @@ void mat_mul(gf2matrix *matA, gf2matrix *matB, gf2matrix *result) {
   uint32_t ncols_A = get_ncols(matA);
   uint32_t nrows_B = get_nrows(matB);
 
-  for (int i = 0; i < ncols_A; i++) {
-    for (int j = 0; j < nrows_B; j++) {
+  for (uint32_t i = 0; i < ncols_A; i++) {
+    for (uint32_t j = 0; j < nrows_B; j++) {
       part = get_entry(matA, i, 0) * get_entry(matB, 0, j);
 
-      for (int z = 1; z < ncols_A; z++)
+      for (uint32_t z = 1; z < ncols_A; z++)
         part = part ^ (get_entry(matA, i, z) * get_entry(matB, z, j));
 
       set_entry(result, i, j, part);
@@ -123,16 +123,16 @@ int gaussjordan_inv(gf2matrix *mat) {
   uint32_t nrows_mat = get_nrows(mat);
   uint32_t ncols_mat = get_ncols(mat);
   uint32_t nwords_mat = get_nwords(mat);
-  for (int i = 0, j = 0; i < nrows_mat; j = ++i) {
+  for (uint32_t i = 0, j = 0; i < nrows_mat; j = ++i) {
     for (; j < ncols_mat && !get_entry(mat, j, i); j++);
 
     if (i != j)
       swap_rows(mat, i, j);
     swap_rows(&identity, i, j);
 
-    for (int k = 0; k < nrows_mat; k++)
+    for (uint32_t k = 0; k < nrows_mat; k++)
       if (k != i && get_entry(mat, k, i))
-        for (int l = 0; l < nwords_mat; l++) {
+        for (uint32_t l = 0; l < nwords_mat; l++) {
           mat->rows[k][l] = mat->rows[k][l] ^ mat->rows[i][l];
           (&identity)->rows[k][l] =
               (&identity)->rows[k][l] ^ (&identity)->rows[i][l];

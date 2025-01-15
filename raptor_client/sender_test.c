@@ -10,7 +10,7 @@ int main()
     uint32_t send_count;
     setup_send_socket("127.0.0.1",SERV_PORT_RECEIVE,&serv_addr,&sock_fd);
     uint32_t recvive_fd = setup_recieve_socket(SERV_PORT_SEND);
-    strcpy(buffer+1,"tet");
+    strcpy(buffer+1,"test");
         buffer[0] = checksum(buffer,strlen(buffer+1)+1);
     for(int i=0;i<100;i++){
         if((send_count=sendto(sock_fd,buffer,strlen(buffer+1)+1,0,(SA*)&serv_addr,sizeof(serv_addr)))==-1)err_quit("send");

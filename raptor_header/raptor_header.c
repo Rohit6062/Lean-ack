@@ -14,8 +14,8 @@ void xor(byte* result,byte* a,byte* b,uint32_t n){
   }
 }
 
-int factorial(int n) {
-  int result = 1, i;
+uint32_t factorial(uint32_t n) {
+  uint32_t result = 1, i;
 
   for (i = 2; i <= n; i++)
     result *= i;
@@ -33,12 +33,12 @@ int is_prime(uint32_t n) {
   return 1;
 }
 
-int choose(int i, int j) {
+uint32_t choose(int i, int j) {
   return (factorial(i)) / (factorial(j) * factorial(i - j));
 }
 
 void raptor_Trip(uint32_t K, uint32_t X, uint32_t triple[3], raptor *obj) {
-  uint32_t L = obj->K + obj->S + obj->H;
+  obj->L = obj->K + obj->S + obj->H;
   uint32_t L_ = obj->L;
   while (!is_prime(L_))
     L_++;
@@ -57,6 +57,19 @@ void raptor_Trip(uint32_t K, uint32_t X, uint32_t triple[3], raptor *obj) {
   triple[1] = a;
   triple[2] = b;
 }
+
+raptor* build_raptor(unsigned long file_size){
+    raptor* out = (raptor*) malloc(sizeof(raptor));    
+    bzero(out,sizeof(out));
+    out->K = file_size;
+    out->Kmin = 1024;
+    out->Kmax = 8192;
+    out->Gmax = 10;
+    out->Al = 4;
+    out->P = 65200;
+    return out;
+}
+
 
 uint32_t raptor_Rand(uint32_t X, uint32_t i, uint32_t m) {
   return (V0[(X + i) % 256] ^ V1[((uint32_t)floor(X / 256) + i) % 256]) % m;
@@ -91,6 +104,7 @@ int raptor_build_LDPC_submat(int K, int S, gf2matrix *A) {
     b = (b + a) % S;
     set_entry(A, b, i, 1);
   }
+    return 0;
 }
 
 int raptor_build_Half_submat(unsigned int K, unsigned int S, unsigned int H,gf2matrix *A) {
@@ -101,12 +115,13 @@ int raptor_build_Half_submat(unsigned int K, unsigned int S, unsigned int H,gf2m
   uint32_t m[n_words];
 
   uint j = 0;
-  for (size_t i = 0; i < n_words; i++)
+  for (size_t i = 0; i < n_words; i++){
     if (__builtin_popcount(g[i]) == H_) {
       m[j] = g[i];
       j++;
     }
     printf("j = %d\n", j);
+    }
 
   // Build the G_HALF submatrix
   for (uint h = 0; h < H; h++) {
@@ -116,6 +131,7 @@ int raptor_build_Half_submat(unsigned int K, unsigned int S, unsigned int H,gf2m
       }
     }
   }
+    return 0;
 }
 
 int raptor_build_LT_submat(uint32_t K, uint32_t S, uint32_t H, raptor *obj,gf2matrix *A) {
@@ -124,6 +140,7 @@ int raptor_build_LT_submat(uint32_t K, uint32_t S, uint32_t H, raptor *obj,gf2ma
   while (!is_prime(L_))
     L_++;
   for(uint32_t i = 0; i < K; i++)LTEncode(obj,A,i,i+S+H,L_);
+    return 0;
 }
 
 void LTEncode(raptor* obj,gf2matrix* mat,uint32_t x, uint32_t row_index ,uint32_t L_){
@@ -141,7 +158,7 @@ void LTEncode(raptor* obj,gf2matrix* mat,uint32_t x, uint32_t row_index ,uint32_
 }
 void raptor_build_LT_mat(uint32_t N_, raptor *obj, gf2matrix *G_LT,uint32_t *ESIs) {
     printf("N_ = %d\n", N_);
-    uint32_t L = obj->K + obj->S + obj->H;
+    obj->L = obj->K + obj->S + obj->H;
     uint32_t L_ = obj->L;
     while (!is_prime(L_))L_++;
     for (uint32_t i = 0; i < N_; i++) {
@@ -160,7 +177,7 @@ int gaussian_elim(gf2matrix* mat,byte** result, raptor* obj, int* d){
     for(i=0;i<get_ncols(mat);i++){
         if(!get_entry(mat,i,i)){
             is_start = true;
-            for(int j=i+1;j<get_nrows(mat);j++){
+            for(uint32_t j=i+1;j<get_nrows(mat);j++){
                 if(get_entry(mat,j,i) && (is_start || d[j] <= d[i])){
                     strncpy(temp_buffer,result[i],obj->T);
                     strncpy(result[j],result[i],obj->T);
@@ -175,7 +192,7 @@ int gaussian_elim(gf2matrix* mat,byte** result, raptor* obj, int* d){
         }
         if(!d[i]) return -1;
         if(d[i]>1){queue_push(stk,i);continue;}
-        for(int j=0;j<get_nrows(mat);j++){
+        for(uint32_t j=0;j<get_nrows(mat);j++){
             if(j != i && get_entry(mat,j,i)){
                 set_entry(mat,j,i,0);
                 // result[j]^=result[i];
@@ -209,9 +226,9 @@ int gaussian_elim(gf2matrix* mat,byte** result, raptor* obj, int* d){
 int raptor_build_constraints_mat(raptor *obj, gf2matrix *A){
     raptor_build_LDPC_submat(obj->K, obj->S, A);
     raptor_build_Half_submat(obj->K, obj->S, obj->H, A);
-    for (int i = 0; i < obj->S; i++)
+    for (uint32_t i = 0; i < obj->S; i++)
     set_entry(A, i, obj->K + i, 1);
-    for (int i = 0; i < obj->H; i++)
+    for (uint32_t i = 0; i < obj->H; i++)
     set_entry(A, obj->S + i, obj->K + obj->S + i, 1);
     raptor_build_LT_submat(obj->K, obj->S, obj->H, obj, A);
     gaussjordan_inv(A);
@@ -330,7 +347,7 @@ void copy_row(raptor* obj,gf2matrix* mat1,uint32_t mat1_row,gf2matrix* mat2,uint
 byte** rapter_generate_intermediate_symb(raptor* obj,byte** data){
     gf2matrix* A = malloc(sizeof(gf2matrix));
     byte** output = (byte**) malloc(sizeof(byte*)*obj->L);
-    for(int i=0;i<obj->L;i++)output[i] = (byte*)malloc(sizeof(byte)*obj->T);
+    for(uint32_t i=0;i<obj->L;i++)output[i] = (byte*)malloc(sizeof(byte)*obj->T);
     allocate_gf2matrix(A,obj->L,obj->L);
     raptor_build_constraints_mat(obj,A);
     raptor_multiplication(obj,A,data,output);

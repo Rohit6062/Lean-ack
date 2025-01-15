@@ -48,23 +48,13 @@ typedef struct {
   uint32_t G;
 } raptor;
 
-raptor* build_raptor(unsigned long file_size){
-    raptor* out = (raptor*) malloc(sizeof(raptor));    
-    bzero(out,sizeof(out));
-    out->K = file_size;
-    out->Kmin = 1024;
-    out->Kmax = 8192;
-    out->Gmax = 10;
-    out->Al = 4;
-    out->P = 65200;
-}
-
+raptor* build_raptor(unsigned long file_size);
 /**
  * Factorial function
  * @param n number of which to make the factorial
  * @return the factorial
  */
-int factorial(int n);
+uint32_t factorial(uint32_t n);
 
 /**
  * Determine whether the provided number is prime or not
@@ -79,7 +69,7 @@ int is_prime(uint32_t n);
  * @param i second number
  * @return binomial
  */
-int choose(int i, int j);
+uint32_t choose(int i, int j);
 
 /**
  * Rand function generate pseudo-random numbers
@@ -186,5 +176,6 @@ byte** rapter_generate_intermediate_symb(raptor* obj,byte** data);
 
 
 void xor(byte* result,byte* a,byte* b,uint32_t n);
+void copy_row(raptor* obj,gf2matrix* mat1,uint32_t mat1_row,gf2matrix* mat2,uint32_t mat2_row);
 void LTEncode(raptor* obj,gf2matrix* mat,uint32_t x, uint32_t row_index ,uint32_t L_);
 #endif

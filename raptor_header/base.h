@@ -150,6 +150,7 @@ sockinfo* raptor_accept_req(){
         (SA*)output->send_addr,
         &output->send_addr_len))==-1)err_quit("raptor_accept_req recvfrom");
     buffer[bufflen] = 0;
+    printf("bufferlen %d\n",bufflen);
     if((output->send_fd = socket(AF_INET,SOCK_DGRAM,0))==-1)err_quit("socket raptor_accept_req");
     output->send_addr->sin_port = htons(SERV_PORT_SEND);
     raptor_print(buffer,bufflen);
@@ -242,7 +243,15 @@ void raptor_send_block(raptor* obj,sockinfo* sock,uint16_t block_no){
     }
 }
 
-void btostr(byte* destination,uint16_t* output);
+void stostr(byte* output,uint16_t number){
+    int bound = 10000;
+    int i=0;
+    while(bound){
+        output[i++] = number / bound + '0';
+        number%=bound;
+        bound/=10;
+    }
+}
 
 uint32_t recvfrom_with_timeout(sockinfo* sock ,int timeout_secs){
     fd_set read_fds;
@@ -267,13 +276,13 @@ void raptor_recieve_block(raptor* obj,sockinfo* sock,uint16_t block_no,uint32_t 
     byte header_size = 4;
     byte* ack = calloc(sizeof(byte),7);
     strcpy(ack,"got");
-    ack[3] = block_no/100 + '0';
-    ack[4] = (block_no%100)/10 + '0';
-    ack[5] = block_no%10 + '0';
+    stostr(ack+3,block_no);
     printf("reciving %s\n",ack);
     uint32_t timeout = 10;
     int32_t previous_sid = -1;
     byte** recieved_data = (byte**) malloc(sizeof(byte*)*symbols_count);
+    uint32_t* ESI = (uint32_t*) malloc(sizeof(uint32_t)*symbols_count);
+    uint32_t* D = (uint32_t*) calloc(sizeof(uint32_t),symbols_count);
     for(int i=0;i<symbols_count;i++)recieved_data[i] = (byte*) calloc(sizeof(byte),obj->T);
     while(received_symbols < symbols_count){
         bytes_received  = recvfrom_with_timeout(sock,timeout);
@@ -282,8 +291,38 @@ void raptor_recieve_block(raptor* obj,sockinfo* sock,uint16_t block_no,uint32_t 
         memcpy(&recieved_sid,sock->buffer+2,sizeof(recieved_sid));
         recieved_sid = ntohs(recieved_sid);
         if(received_symbols != block_no && recieved_sid <= previous_sid)continue;
+        ESI[received_symbols] = recieved_sid;
         previous_sid = recieved_sid;
         strncpy(recieved_data[received_symbols],sock->buffer+header_size,obj->T);
         received_symbols++;
     }
+    gf2matrix* A = (gf2matrix*) malloc(sizeof(gf2matrix));
+    allocate_gf2matrix(A,obj->L,obj->L);
+    raptor_build_constraints_mat(obj,A);
+    gf2matrix* gauss_mat = (gf2matrix*) malloc(sizeof(gf2matrix));
+    allocate_gf2matrix(gauss_mat,symbols_count,obj->K);
+    gf2matrix* dummy_row = (gf2matrix*) malloc(sizeof(gf2matrix));
+    allocate_gf2matrix(dummy_row,1,obj->L);
+    uint32_t L_ = obj->L;
+    while(!is_prime(L_))L_++;
+    for(int i=0;i<symbols_count;i++){
+        if(ESI[i]<obj->K){
+            D[i] = 1;
+            set_entry(gauss_mat,i,ESI[i],1);
+        }
+        else{
+            LTEncode(obj,dummy_row,ESI[i],0,L_);
+            for(int j=0;j<obj->L;j++){
+                if(get_entry(dummy_row,0,j)){
+                    copy_row(obj,gauss_mat,i,A,j);
+                }
+            }
+            for(int j=0;j<gauss_mat->n_words;j++){
+                D[i] += __builtin_popcount(gauss_mat->rows[i][j]);
+            } 
+            for(int p=0;p<dummy_row->n_words;p++)dummy_row->rows[0][p]=0;
+        }  
+    }
+    printf("gaussian elimination => %d \n",gaussian_elim(gauss_mat,recieved_data,obj,D));
+    for(int i=0;i<obj->K;i++)printf("%hhn ",recieved_data[i]);
 }
