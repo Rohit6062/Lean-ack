@@ -14,25 +14,25 @@ typedef unsigned char byte;
  * @struct raptor
  * @brief Structure holding all the fields needed by raptor encoder and
  * decoder
- * @var raptor::F Transfer length of the object, in bytes
- * @var raptor::Al symbol alignment parameter
- * @var raptor::T symbol size, in bytes
- * @var raptor::Z number of source blocks
- * @var raptor::N number of sub-blocks in each source block
- * @var raptor::W a target on the sub-block size
- * @var raptor::P maximum packet payload size (multiple of ~Al~)
- * @var raptor::Kmax maximum number of source symbols per source block
- * @var raptor::Kmin minimum target on the number of symbols per source block
- * @var raptor::Gmax maximum target number of symbols per packet
- * @var raptor::K denotes the number of symbols in a single source block
- * @var raptor::L denotes the number of pre-coding symbols for a single source block
- * @var raptor::S denotes the number of LDPC symbols for a single source block
- * @var raptor::H denotes the number of Half symbols for a single source block
- * @var raptor::G the number of symbols within an encoding symbol group
+ * @param raptor::F Transfer length of the object, in bytes
+ * @param raptor::Al symbol alignment parameter
+ * @param raptor::T symbol size, in bytes
+ * @param raptor::Z number of source blocks
+ * @param raptor::N number of sub-blocks in each source block
+ * @param raptor::W a target on the sub-block size
+ * @param raptor::P maximum packet payload size (multiple of ~Al~)
+ * @param raptor::Kmax maximum number of source symbols per source block
+ * @param raptor::Kmin minimum target on the number of symbols per source block
+ * @param raptor::Gmax maximum target number of symbols per packet
+ * @param raptor::K denotes the number of symbols in a single source block
+ * @param raptor::L denotes the number of pre-coding symbols for a single source block
+ * @param raptor::S denotes the number of LDPC symbols for a single source block
+ * @param raptor::H denotes the number of Half symbols for a single source block
+ * @param raptor::G the number of symbols within an encoding symbol group
  */
 typedef struct {
-  uint32_t F;
-  // uint32_t W;
+  uint64_t F;
+  uint32_t W; 
   uint32_t P;
   uint32_t Al;
   uint32_t Kmax;
@@ -48,10 +48,10 @@ typedef struct {
   uint32_t G;
 } raptor;
 
-raptor* build_raptor(unsigned long file_size);
-uint32_t factorial(uint32_t n);
+// raptor* build_raptor(unsigned long file_size);
+uint64_t factorial(uint64_t n);
 int is_prime(uint32_t n);
-uint32_t choose(int i, int j);
+uint32_t choose(uint32_t i, uint32_t j);
 uint32_t raptor_Rand(uint32_t X, uint32_t i, uint32_t m);
 uint32_t raptor_Deg(uint32_t v);
 void raptor_Trip(uint32_t K, uint32_t X, uint32_t triple[3], raptor *obj);

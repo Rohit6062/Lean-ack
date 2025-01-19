@@ -7,7 +7,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <errno.h>
-
+// #include "raptor_header/base.h"
 // Function to receive data with a timeout
 ssize_t recv_with_timeout(int sockfd, void *buffer, size_t len, int timeout_secs) {
     fd_set read_fds;
@@ -28,7 +28,7 @@ ssize_t recv_with_timeout(int sockfd, void *buffer, size_t len, int timeout_secs
         return -1;  // Error occurred
     } else if (retval == 0) {
         printf("Timeout occurred! No data received in %d seconds.\n", timeout_secs);
-        return -1;  // Timeout occurred
+        return -1;  // Timeout occurredṇ
     }
 
     // If socket is readable, call recv
@@ -41,7 +41,7 @@ ssize_t recv_with_timeout(int sockfd, void *buffer, size_t len, int timeout_secs
     return bytes_received;  // Return number of bytes received
 }
 
-int main() {
+int main1() {
     int sockfd;
     struct sockaddr_in server_addr;
     char buffer[1024];
@@ -78,5 +78,23 @@ int main() {
 
     // Close the socket
     close(sockfd);
+    return 0;
+}
+int main()
+{
+    typedef struct{
+        int a;
+        int b;
+        int c;
+        int d;
+    }o;
+    o a;
+    o b;
+    a.a=100;
+    a.b=101;
+    a.c=1021232;
+    a.d=103;
+    memcpy(&b,&a,sizeof(o));
+    printf("%d %d %d %d\n",b.a,b.b,b.c,b.d);
     return 0;
 }

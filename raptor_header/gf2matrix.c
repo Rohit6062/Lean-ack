@@ -1,13 +1,5 @@
 #include "gf2matrix.h"
 #include <math.h>
-
-#define min(a, b)                                                              \
-  ({                                                                           \
-    __typeof__(a) _a = (a);                                                    \
-    __typeof__(b) _b = (b);                                                    \
-    _a < _b ? _a : _b;                                                         \
-  })
-
 uint32_t wordsize = 8 * sizeof(word);
 uint32_t wordbitmask = 8 * sizeof(word);
 uint32_t wordshift = 5;
@@ -141,4 +133,10 @@ int gaussjordan_inv(gf2matrix *mat) {
 
   *mat = identity;
   return 0;
+}
+
+uint32_t min(uint32_t a, uint32_t b)
+{
+  if(a<b)return a;
+  return b; 
 }

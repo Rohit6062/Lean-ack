@@ -14,27 +14,39 @@ void xor(byte* result,byte* a,byte* b,uint32_t n){
   }
 }
 
-uint32_t factorial(uint32_t n) {
-  uint32_t result = 1, i;
+uint64_t factorial(uint64_t n) {
+  uint64_t result = 1, i;
 
   for (i = 2; i <= n; i++)
     result *= i;
 
   return result;
 }
+int is_prime(uint32_t num) {
+    if (num <= 1) {
+        return 0; // Numbers less than or equal to 1 are not prime
+    }
+    if (num == 2) {
+        return 1; // 2 is the only even prime number
+    }
+    if (num % 2 == 0) {
+        return 0; // Any other even number is not prime
+    }
 
-int is_prime(uint32_t n) {
-  if (n <= 1)
-    return 0;
+    // Only check odd numbers from 3 to sqrt(num)
+    for (int i = 3; i*i <= num; i += 2) {
+        if (num % i == 0) {
+            return 0; // If divisible by any number, it's not prime
+        }
+    }
 
-  for (uint32_t i = 2; i * i <= n; i++)
-      return 0;
-
-  return 1;
+    return 1; // If no divisors are found, it's prime
 }
 
-uint32_t choose(int i, int j) {
-  return (factorial(i)) / (factorial(j) * factorial(i - j));
+uint32_t choose(uint32_t i, uint32_t j) {
+  // printf("%d %d i,j\n",i,j);
+  if(i==j || !j)return factorial(i);
+  return (factorial(i) / (factorial(j) * factorial(abs(i - j))));
 }
 
 void raptor_Trip(uint32_t K, uint32_t X, uint32_t triple[3], raptor *obj) {
@@ -110,11 +122,11 @@ int raptor_build_LDPC_submat(int K, int S, gf2matrix *A) {
 int raptor_build_Half_submat(unsigned int K, unsigned int S, unsigned int H,gf2matrix *A) {
   uint32_t g[4000];
   generate_gray_seq(&g[0]);
-  uint H_ = ceil((float)H / 2.0);
+  uint32_t H_ = ceil((float)H / 2.0);
   size_t n_words = 4000;
   uint32_t m[n_words];
 
-  uint j = 0;
+  uint32_t j = 0;
   for (size_t i = 0; i < n_words; i++){
     if (__builtin_popcount(g[i]) == H_) {
       m[j] = g[i];
@@ -124,8 +136,8 @@ int raptor_build_Half_submat(unsigned int K, unsigned int S, unsigned int H,gf2m
     }
 
   // Build the G_HALF submatrix
-  for (uint h = 0; h < H; h++) {
-    for (uint j = 0; j < K + S; j++) {
+  for (uint32_t h = 0; h < H; h++) {
+    for (uint32_t j = 0; j < K + S; j++) {
       if (m[j] & (1UL << h)) {
         set_entry(A, h + S, j, 1);
       }
@@ -149,7 +161,7 @@ void LTEncode(raptor* obj,gf2matrix* mat,uint32_t x, uint32_t row_index ,uint32_
     uint32_t j_max = fmin((triple[0]-1),(obj->L-1));
     while(triple[2] >= obj->L) triple[2] = (triple[2] + triple[1]) % L_;
     set_entry(mat,row_index,triple[2],1);
-    for(uint j =1;j<=j_max;j++){
+    for(uint32_t j =1;j<=j_max;j++){
         do {
             triple[2] = (triple[2] + triple[1]) % L_;
         }while (triple[2] >= obj->L); 
@@ -241,13 +253,17 @@ void raptor_compute_params(raptor *obj){
     uint32_t X = floor(sqrt(2 * obj->K));
     for (; X * X < 2 * obj->K + X; X++);
     for (obj->S = ceil(0.01 * obj->K) + X; !is_prime(obj->S); obj->S++);
-    for (obj->H = 1; choose(obj->H, ceil(obj->H / 2)) < obj->K + obj->S; obj->H++);
+    obj->H=1;
+    while(true){
+        if(choose(obj->H,ceil( (double)obj->H/(double)2 )) > obj->K+obj->S )break;
+        obj->H = obj->H + 1;
+    }
     obj->L = obj->K + obj->S + obj->H;
 }
 
 void raptor_multiplication(raptor *obj, gf2matrix *A, byte **block,byte** res_block) {
-    for (uint j = 0; j < get_ncols(A); j++){
-        for (uint i = 0; i < get_nrows(A); i++){
+    for (uint32_t j = 0; j < get_ncols(A); j++){
+        for (uint32_t i = 0; i < get_nrows(A); i++){
             if(get_entry(A, i,j))xor(res_block[i],res_block[i],block[j],obj->T);
         }
     }

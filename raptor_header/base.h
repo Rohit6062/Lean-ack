@@ -7,9 +7,9 @@
 #define Bufflen (1<<16)-1
 typedef struct sockaddr SA;
 typedef unsigned char byte;
-
 #include<sys/types.h>
 #include<sys/socket.h>
+#include"math.h"
 #include<sys/time.h>
 #include<time.h>
 #include<netinet/in.h>
@@ -75,7 +75,7 @@ typedef unsigned char byte;
  */
 typedef struct{
     FILE* fp;
-    uint32_t file_size;
+    uint64_t file_size;
     socklen_t send_fd;
     struct sockaddr_in* send_addr;
     socklen_t send_addr_len;
@@ -83,6 +83,23 @@ typedef struct{
     byte* buffer;
     uint32_t buffer_len;
 }sockinfo;
+
+long double devide(uint32_t a, uint32_t b) {
+    if (b == 0) {
+        printf("Error: Division by zero is not allowed.\n");
+        return -1.0; // Return a special value to indicate an error
+    }
+    long double out = (long double)a / (long double)b;
+    // printf("Inputs: a = %u, b = %u, Result: %Lf\n", a, b, out); // Debug print
+    // printf("ceil(out)=> %f\n",ceil(out));
+    return out;
+}
+// double devide(uint32_t a , uint32_t b){
+//     printf("in devide a %u b %u \n",a,b);
+//     double out =  ((double) a / (double) b);
+//     printf("in devide %u\n",out);
+//     return out;
+// }
 
 void err_quit(char*);
 bool checksum(byte* data,uint32_t len);
@@ -137,31 +154,30 @@ sockinfo* raptor_build_sockinfo(){
 sockinfo* raptor_accept_req(){
     sockinfo* output = raptor_build_sockinfo();
     output->recieve_fd = setup_recieve_socket(SERV_PORT_RECEIVE);
-    byte* buffer = (byte*) malloc(sizeof(byte)*1025);
+    output->buffer = (byte*) malloc(sizeof(byte)*1025);
     byte* data = (byte*) calloc(sizeof(byte),1025);
-    uint32_t bufflen;
     output->send_addr_len = sizeof(output->send_addr);
     printf("setup Done\n");
-    if((bufflen = recvfrom(
+    if((output->buffer_len = recvfrom(
         output->recieve_fd,
-        buffer,
+        output->buffer,
         Bufflen,
         0,
         (SA*)output->send_addr,
         &output->send_addr_len))==-1)err_quit("raptor_accept_req recvfrom");
-    buffer[bufflen] = 0;
-    printf("bufferlen %d\n",bufflen);
+    output->buffer[output->buffer_len] = 0;
+    printf("bufferlen %d\n",output->buffer_len);
     if((output->send_fd = socket(AF_INET,SOCK_DGRAM,0))==-1)err_quit("socket raptor_accept_req");
     output->send_addr->sin_port = htons(SERV_PORT_SEND);
-    raptor_print(buffer,bufflen);
-    if(checksum(buffer+1,bufflen-1) != buffer[0]){
+    raptor_print(output->buffer,output->buffer_len);
+    if(checksum(output->buffer+1,output->buffer_len-1) != output->buffer[0]){
         printf("currepted Data\n");
         close(output->recieve_fd);
         free(output->send_addr);
         free(output);
         return raptor_accept_req();
     }
-    if((output->fp = fopen(buffer+1,"r"))==NULL){
+    if((output->fp = fopen( (char*) output->buffer+1,"r"))==NULL){
         printf("file not Found \n");
         strcpy(data+1,"File Not Found!\n");
         data[0] = checksum(data+1,strlen(data+1));
@@ -173,9 +189,12 @@ sockinfo* raptor_accept_req(){
         close(output->send_fd);
         free(output);
         free(data);
-        free(buffer);
+        free(output->buffer);
         return raptor_accept_req();
     }
+    fseek(output->fp,0,SEEK_END);
+    output->file_size = ftell(output->fp);
+    fseek(output->fp,0,SEEK_SET);
     return output;
 }
 
@@ -223,7 +242,7 @@ void raptor_send_block(raptor* obj,sockinfo* sock,uint16_t block_no){
     
     pthread_create(&thread,NULL,raptor_listen,sock);
     int_symb = rapter_generate_intermediate_symb(obj,data);
-    gf2matrix* G_LT = malloc(sizeof(gf2matrix));
+    gf2matrix* G_LT = (gf2matrix*)malloc(sizeof(gf2matrix));
     allocate_gf2matrix(G_LT,obj->L,obj->L);
     uint32_t* esi = (uint32_t*) malloc(sizeof(uint32_t)*obj->L);
     for(int i=0;i<obj->L;i++)esi[i] = i+obj->K;

@@ -45,6 +45,7 @@ extern uint32_t wordbitmask;
 /** NUmber of positions to shift by to divide by word */
 extern uint32_t wordshift;
 
+
 /**
  * Struct that defines the binary GF(2) matrix type as packed words.
  * Defualt word is 32 bit long as this is the smallest unit for the raptor
@@ -172,5 +173,6 @@ void mat_mul(gf2matrix *matA, gf2matrix *matB, gf2matrix *result);
  */
 int gaussjordan_inv(gf2matrix *mat);
 void print_matrix2(gf2matrix *mat,char* res);
+uint32_t min(uint32_t a, uint32_t b);
 
 #endif

@@ -1,5 +1,5 @@
 CC = gcc 
-CFLAGS = -Wall -Wextra  -I. 
+CFLAGS = -Wall -g -Wextra -lm  -I. 
 
 #TARGET output 
 
@@ -9,8 +9,9 @@ SRCS = reciever_test.c ../raptor_header/queue.c ../raptor_header/gf2matrix.c ../
 
 OBJS = $(SRCS:.c=.o) 
 
+
 all:$(TARGET) 
-	./$(TARGET)
+	
 
 $(TARGET):$(OBJS)
 	$(CC) $(OBJS) -o $(TARGET) -lm
@@ -20,3 +21,5 @@ $(TARGET):$(OBJS)
 
 clean:
 	rm -f $(OBJS) $(TARGET)
+run: all 
+	clear && ./$(TARGET)
