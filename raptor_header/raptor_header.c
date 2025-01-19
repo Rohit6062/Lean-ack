@@ -58,19 +58,19 @@ void raptor_Trip(uint32_t K, uint32_t X, uint32_t triple[3], raptor *obj) {
   triple[2] = b;
 }
 
-raptor* build_raptor(unsigned long file_size){
-    raptor* out = (raptor*) malloc(sizeof(raptor));    
-    bzero(out,sizeof(out));
-    out->K = file_size;
-    out->Kmin = 1024;
-    out->Kmax = 8192;
-    out->Gmax = 10;
-    out->Al = 4;
-    out->P = 65200;
-    return out;
-}
-
-
+// raptor* build_raptor(unsigned long file_size){
+//     raptor* out = (raptor*) malloc(sizeof(raptor));    
+//     bzero(out,sizeof(out));
+//     out->K = file_size;
+//     out->Kmin = 1024;
+//     out->Kmax = 8192;
+//     out->Gmax = 10;
+//     out->Al = 4;
+//     out->P = 65200;
+//     return out;
+// }
+//
+//
 uint32_t raptor_Rand(uint32_t X, uint32_t i, uint32_t m) {
   return (V0[(X + i) % 256] ^ V1[((uint32_t)floor(X / 256) + i) % 256]) % m;
 }

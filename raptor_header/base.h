@@ -197,7 +197,6 @@ void* raptor_listen(void* x){
 }
 
 void raptor_send_block(raptor* obj,sockinfo* sock,uint16_t block_no){
-
     byte** data = (byte**) malloc(sizeof(byte*)*obj->K);
     byte** int_symb;
     uint32_t n;
