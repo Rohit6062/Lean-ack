@@ -59,6 +59,7 @@ int main()
     printf("\n%p\n",&k);
     for(uint32_t i=0;i<obj->Z;i++){
         raptor_send_block(obj,tmp,i+1);
+        sleep(1);
     }
     return 0;
 }
