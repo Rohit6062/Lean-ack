@@ -16,6 +16,7 @@ void allocate_gf2matrix(gf2matrix *mat, uint32_t n_rows, uint32_t n_cols) {
         memset(mat->rows[i], 0, mat->n_words);
     }
     mat->m_data = (word *)mat->rows[0];
+    printf("allocated %d rows and %d cols\n",n_rows,n_cols);
 }
 
 void dealloc_gf2matrix(gf2matrix *mat) {

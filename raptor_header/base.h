@@ -147,6 +147,7 @@ socklen_t setup_recieve_socket(uint16_t serv_port){
 sockinfo* raptor_build_sockinfo(){
     sockinfo* output = (sockinfo*) malloc(sizeof(sockinfo));
     output->send_addr = (struct sockaddr_in*) malloc(sizeof(struct sockaddr_in));
+    output->buffer = (byte*) calloc(sizeof(byte*),Bufflen);
     bzero(output->send_addr,sizeof(output->send_addr));
     return output;
 }
@@ -154,7 +155,6 @@ sockinfo* raptor_build_sockinfo(){
 sockinfo* raptor_accept_req(){
     sockinfo* output = raptor_build_sockinfo();
     output->recieve_fd = setup_recieve_socket(SERV_PORT_RECEIVE);
-    output->buffer = (byte*) malloc(sizeof(byte)*1025);
     byte* data = (byte*) calloc(sizeof(byte),1025);
     output->send_addr_len = sizeof(output->send_addr);
     printf("setup Done\n");
@@ -215,8 +215,15 @@ void* raptor_listen(void* x){
     return NULL;
 }
 
+void raptor_send_object(raptor* obj,sockinfo* sock){
+    // send object as metadata
+    sock->buffer[0]=0;
+    memcpy(sock->buffer+1,obj,sizeof(obj));
+    if((sendto(sock->send_fd,sock->buffer,sizeof(obj)+1,0,(SA*)sock->send_addr,sock->send_addr_len))==-1)perror("sendto src");
+}
+
 void raptor_send_block(raptor* obj,sockinfo* sock,uint16_t block_no){
-    byte** data = (byte**) malloc(sizeof(byte*)*obj->K);
+    byte** data = (byte**) calloc(sizeof(byte*),obj->K);
     byte** int_symb;
     uint32_t n;
     uint16_t symb_id=0;
@@ -224,12 +231,15 @@ void raptor_send_block(raptor* obj,sockinfo* sock,uint16_t block_no){
     uint8_t res;
     uint32_t i;
     pthread_t thread;
+    uint16_t recieved_block;
     byte* buffer = (byte*) calloc(sizeof(byte),obj->T+header_size);
 
     for(int i=0;i<obj->K;i++){
-        data[i] = (byte*)calloc(sizeof(byte),obj->T+header_size);
-        fread(data[i]+3,1,obj->T,sock->fp);
+        data[i] = (byte*)calloc(sizeof(byte),obj->T+header_size+1);
+        fread(data[i]+header_size,1,obj->T,sock->fp);
+        raptor_print(data[i],obj->T+header_size);
     }
+    for(int i=obj->K;i<obj->L;i++)data[i] = (byte*) calloc(sizeof(byte),obj->T+header_size+1);
 
     byte** enc_data;// = raptor_encode();
     for(i=0;i<obj->K;i++){
@@ -239,21 +249,32 @@ void raptor_send_block(raptor* obj,sockinfo* sock,uint16_t block_no){
         data[i][3] = symb_id++;
         if((n=sendto(sock->send_fd,data[i],obj->T+header_size,0,(SA*)sock->send_addr,sock->send_addr_len))==-1)perror("sendto src");
     }
+    printf("original Data send -------->\n");
     
     pthread_create(&thread,NULL,raptor_listen,sock);
     int_symb = rapter_generate_intermediate_symb(obj,data);
+    printf("intermediate DOne++++++++>\n");
     gf2matrix* G_LT = (gf2matrix*)malloc(sizeof(gf2matrix));
+    printf("Don2 till this\n");
     allocate_gf2matrix(G_LT,obj->L,obj->L);
     uint32_t* esi = (uint32_t*) malloc(sizeof(uint32_t)*obj->L);
     for(int i=0;i<obj->L;i++)esi[i] = i+obj->K;
     raptor_build_LT_mat(obj->L,obj,G_LT,esi);
-
+    printf("Donw till this\n");;
     for(int i=0;i<obj->L;i++){
-        if(pthread_tryjoin_np(thread,NULL)==0 && !strcmp(sock->buffer+header_size,"got"))break;
+        if(pthread_tryjoin_np(thread,NULL)==0){
+            if((sock->buffer[0] & 128)==0)raptor_send_object(obj,sock);
+            else{
+                sock->buffer[0] = sock->buffer[0] & 127;
+                memcpy(&recieved_block,sock->buffer,sizeof(recieved_block));                
+                recieved_block = ntohs(recieved_block);
+                if(recieved_block==block_no)break; 
+            }
+        }
         for(int j=0;j<obj->L;j++){
             if(get_entry(G_LT,i,j))xor(buffer+header_size,buffer+header_size,int_symb[j],obj->T);
         }
-        buffer[0] = block_no >> 8;
+        buffer[0] = (block_no >> 8) | 128;
         buffer[1] = block_no & 255;
         buffer[2] = symb_id >> 8;
         buffer[3] = symb_id++;
@@ -286,6 +307,7 @@ uint32_t recvfrom_with_timeout(sockinfo* sock ,int timeout_secs){
     sock->buffer[bytes_received]=0;
     return bytes_received;  // Return number of bytes received
 }
+
 void raptor_recieve_block(raptor* obj,sockinfo* sock,uint16_t block_no,uint32_t symbols_count){
     uint32_t received_symbols=0;
     uint32_t bytes_received;
@@ -304,6 +326,8 @@ void raptor_recieve_block(raptor* obj,sockinfo* sock,uint16_t block_no,uint32_t 
     for(int i=0;i<symbols_count;i++)recieved_data[i] = (byte*) calloc(sizeof(byte),obj->T);
     while(received_symbols < symbols_count){
         bytes_received  = recvfrom_with_timeout(sock,timeout);
+        if(sock->buffer[0]==0)continue;
+        else sock->buffer[0] = sock->buffer[0] & 127;
         memcpy(&recieved_block,sock->buffer,sizeof(recieved_block));
         recieved_block = ntohs(recieved_block);
         memcpy(&recieved_sid,sock->buffer+2,sizeof(recieved_sid));
