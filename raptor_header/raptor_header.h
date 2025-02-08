@@ -51,7 +51,7 @@ typedef struct {
 // raptor* build_raptor(unsigned long file_size);
 uint64_t factorial(uint64_t n);
 int is_prime(uint32_t n);
-uint32_t choose(uint32_t i, uint32_t j);
+uint32_t choose(int32_t i, int32_t j);
 uint32_t raptor_Rand(uint32_t X, uint32_t i, uint32_t m);
 uint32_t raptor_Deg(uint32_t v);
 void raptor_Trip(uint32_t K, uint32_t X, uint32_t triple[3], raptor *obj);
@@ -60,6 +60,7 @@ int raptor_build_LDPC_submat(int K, int S, gf2matrix *A);
 int raptor_build_Half_submat(unsigned int K, unsigned int S, unsigned int H,gf2matrix *A);
 int raptor_build_LT_submat(uint32_t K, uint32_t S, uint32_t H, raptor *obj,gf2matrix *A);
 int raptor_build_constraints_mat(raptor *obj, gf2matrix *A);
+void raptor_compute_params(raptor *obj);
 void raptor_build_LT_mat(uint32_t N_, raptor *obj, gf2matrix *G_LT,uint32_t *ESIs);
 void raptor_multiplication(raptor *obj, gf2matrix *A, byte **block,byte** res_block);
 void raptor_encode(uint8_t *src_s, uint8_t *enc_s, raptor *obj, gf2matrix *A);
@@ -67,9 +68,9 @@ void my_encode(uint8_t *src_s,uint8_t* enc_s, raptor* obj);
 void my_decode(uint8_t* enc_s, raptor* obj,uint32_t* ESIs,uint32_t n);
 void raptor_decode(uint8_t *enc_s, uint8_t *dec_s, raptor *obj, gf2matrix *A,uint32_t N_, uint32_t *ESIs);
 int gaussian_elimination(gf2matrix* mat, uint8_t *result, int size,raptor* obj);
-int gaussian_elim(gf2matrix* mat, byte** result,raptor* obj,int*);
+int gaussian_elim(gf2matrix* mat, byte** result,raptor* obj,uint32_t*);
 byte** rapter_generate_intermediate_symb(raptor* obj,byte** data);
 void xor(byte* result,byte* a,byte* b,uint32_t n);
-void copy_row(raptor* obj,gf2matrix* mat1,uint32_t mat1_row,gf2matrix* mat2,uint32_t mat2_row);
+void copy_row(gf2matrix* mat1,uint32_t mat1_row,gf2matrix* mat2,uint32_t mat2_row);
 void LTEncode(raptor* obj,gf2matrix* mat,uint32_t x, uint32_t row_index ,uint32_t L_);
 #endif

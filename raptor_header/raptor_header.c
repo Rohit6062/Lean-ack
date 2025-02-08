@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include<stdbool.h>
 
+
+
 void generate_gray_seq(uint32_t *gray_seq) {
   for (uint32_t i = 0; i < 4000; i++)
     gray_seq[i] = i ^ (uint32_t)(floor(i / 2));
@@ -45,7 +47,7 @@ int is_prime(uint32_t num) {
     return 1; // If no divisors are found, it's prime
 }
 
-uint32_t choose(uint32_t i, uint32_t j) {
+uint32_t choose(int32_t i, int32_t j) {
   // printf("%d %d i,j\n",i,j);
   if(i==j || !j)return factorial(i);
   return (factorial(i) / (factorial(j) * factorial(abs(i - j))));
@@ -190,8 +192,7 @@ void raptor_build_LT_mat(uint32_t N_, raptor *obj, gf2matrix *G_LT,uint32_t *ESI
     }
 }
 
-int gaussian_elim(gf2matrix* mat,byte** result, raptor* obj, int* d){
-    char dest;
+int gaussian_elim(gf2matrix* mat,byte** result, raptor* obj, uint32_t* d){
     int tmp;
     bool is_start = true;
     queue* stk = queue_build();
@@ -203,9 +204,9 @@ int gaussian_elim(gf2matrix* mat,byte** result, raptor* obj, int* d){
             is_start = true;
             for(uint32_t j=i+1;j<get_nrows(mat);j++){
                 if(get_entry(mat,j,i) && (is_start || d[j] <= d[i])){
-                    strncpy(temp_buffer,result[i],obj->T);
-                    strncpy(result[j],result[i],obj->T);
-                    strncpy(result[i],temp_buffer,obj->T);
+                    memcpy(temp_buffer,result[i],obj->T);
+                    memcpy(result[j],result[i],obj->T);
+                    memcpy(result[i],temp_buffer,obj->T);
                     tmp = d[i];
                     d[i] = d[j];
                     d[j] = tmp;
@@ -282,7 +283,7 @@ void raptor_multiplication(raptor *obj, gf2matrix *A, byte **block,byte** res_bl
     }
     printf("Done raptor_multiplication\n");
 }
-void copy_row(raptor* obj,gf2matrix* mat1,uint32_t mat1_row,gf2matrix* mat2,uint32_t mat2_row){
+void copy_row(gf2matrix* mat1,uint32_t mat1_row,gf2matrix* mat2,uint32_t mat2_row){
   for(uint32_t i=0;i<mat1->n_words;i++){
     mat1->rows[mat1_row][i]^=mat2->rows[mat2_row][i];
   }

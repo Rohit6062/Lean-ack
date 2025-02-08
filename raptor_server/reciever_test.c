@@ -38,7 +38,7 @@ int main()
     uint32_t W = 10485760;
     // obj->N    = 1;
     // obj->T    = 8192;
-    printf("filesixe %d\n",obj->F);
+    printf("filesixe %ld\n",obj->F);
     obj->G = min(min(ceil( devide( obj->P*obj->Kmin,obj->F)) , ceil(devide(obj->P,obj->Al))), obj->Gmax);
     printf("G => %d\n",obj->G);
     obj->T = floor(devide(obj->P,(obj->Al*obj->G)))*obj->Al;
