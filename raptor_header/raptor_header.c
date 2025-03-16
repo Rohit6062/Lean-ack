@@ -288,92 +288,6 @@ void copy_row(gf2matrix* mat1,uint32_t mat1_row,gf2matrix* mat2,uint32_t mat2_ro
     mat1->rows[mat1_row][i]^=mat2->rows[mat2_row][i];
   }
 }
-/*
- * Assumptions:
- * src_s data is padded wiht 0 so that len(src_s) == obj->L*obj->T;
- * all parameters of obj (raptor) is properly set
-    */
-// void my_encode(uint8_t *src_s,uint8_t* enc_s, raptor* obj){
-//     gf2matrix* A = malloc(sizeof(gf2matrix));
-//     gf2matrix* G_LT = malloc(sizeof(gf2matrix));
-//     uint8_t* int_symbols = calloc(sizeof(uint8_t),obj->L*obj->T);
-//     allocate_gf2matrix(A,obj->L,obj->L);
-//     raptor_build_constraints_mat(obj,A);
-//     print_matrix(A);
-//     bzero(src_s+obj->K,obj->L-obj->K);
-//     raptor_multiplication(obj,A,src_s,int_symbols);
-//     for(int i=0;i<obj->L;i++)printf("%d ",int_symbols[i]);
-//     printf("intermediate symbols encode\n");
-//     allocate_gf2matrix(G_LT,obj->L,obj->L);
-//     uint32_t* esi = (uint32_t*) malloc(sizeof(uint32_t)*obj->L);
-//     for(int i=0;i<obj->L;i++)esi[i] = i+obj->K;
-//     raptor_build_LT_mat(obj->L,obj,G_LT,esi);
-//     print_matrix(G_LT);
-//     printf("GLT\n");
-//     raptor_multiplication(obj,G_LT,int_symbols,enc_s);
-//     for(int i=0;i<obj->L;i++)printf("%d ",enc_s[i]);
-//     printf("encoded symbols encode\n");
-// }
-// void my_decode(uint8_t* enc_s, raptor* obj,uint32_t* ESIs,uint32_t n){
-//     gf2matrix* A =malloc(sizeof(gf2matrix));
-//     gf2matrix* gauss_mat = malloc(sizeof(gf2matrix));
-//     gf2matrix* dummy_row = malloc(sizeof(gf2matrix));
-//     allocate_gf2matrix(dummy_row,1,obj->L);
-//     allocate_gf2matrix(gauss_mat,n,obj->K);
-//     allocate_gf2matrix(A,obj->L,obj->L);
-//     raptor_build_constraints_mat(obj,A);  
-//     uint32_t L_ = obj->L;
-//     while(!is_prime(L_))L_++;
-//     uint32_t* d = calloc(sizeof(uint32_t),n);
-//     for(int i=0;i<n;i++){
-//         printf("i %d data %d\n",i,enc_s[i]);
-//         if( ESIs[i] < obj->K ){
-//             d[i] = 1;
-//             set_entry(gauss_mat,i,ESIs[i],1);
-//         }
-//         else{
-//             LTEncode(obj,dummy_row,ESIs[i],0,L_);
-//             print_matrix2(dummy_row,enc_s);
-//             printf("step 1\n");
-//             for(int j=0;j<obj->L;j++){
-//                 if(get_entry(dummy_row,0,j)){
-//                     printf("copy %d %d \n",i,j);
-//                     copy_row(obj,gauss_mat,i,A,j);
-//                     print_matrix2(gauss_mat,enc_s);
-//                 }
-//             }
-//             print_matrix2(gauss_mat,enc_s);
-//             printf("step 2\n");
-//             for(uint32_t j=0;j<gauss_mat->n_words;j++){
-//                 d[i]+= __builtin_popcount(gauss_mat->rows[i][j]);
-//               printf("gauss_mat->rows[0][j] = %d\n", gauss_mat->rows[i][j]);
-//             }
-//             for(uint32_t p=0;p<dummy_row->n_words;p++)dummy_row->rows[0][p]=0;
-//             print_matrix2(dummy_row,enc_s);
-//             printf("Done d %d\n",d[i]);
-//         }
-//       print_matrix2(gauss_mat,enc_s);
-//     }
-//     printf("gaussian_elimination\n");
-//     printf("elim = > %d\n",gaussian_elim(gauss_mat,enc_s,obj,d));
-//     for(int i=0;i<obj->K;i++)printf("%c ",enc_s[i]);
-// }
-
-// void raptor_decode(uint8_t *enc_s, uint8_t *dec_s, raptor *obj, gf2matrix *A,uint32_t N_,uint32_t* ESIs) {
-//     gaussjordan_inv(A);
-//     uint8_t* int_symbols = (uint8_t*) calloc(obj->L, sizeof(uint8_t));
-//     raptor_multiplication(obj, A, enc_s, int_symbols);
-//     for(int i=0;i<obj->L;i++)printf("%d ",int_symbols[i]);
-//     printf("<-- decode intermediate \n");
-//     // gf2matrix G_LT;
-//     // allocate_gf2matrix(&G_LT, obj->L, obj->K);
-//     // Build the LT matrix and decode
-//     // raptor_build_LT_mat(N_, obj, &G_LT, ESIs);
-//     // gaussjordan_inv(&G_LT);
-//     // print_matrix(&G_LT);
-//     raptor_multiplication(obj, A, int_symbols, dec_s);
-//     for(int i=0;i<obj->K;i++)printf("%c ",dec_s[i]);
-// }
 
 byte** rapter_generate_intermediate_symb(raptor* obj,byte** data){
     gf2matrix* A = malloc(sizeof(gf2matrix));
@@ -384,3 +298,58 @@ byte** rapter_generate_intermediate_symb(raptor* obj,byte** data){
     raptor_multiplication(obj,A,data,output);
     return output;
 }
+
+void raptor_print_object(raptor* obj){
+    printf("<- Raptor Object ->\n");
+    printf("\tF %ld\n",obj->F);
+    printf("\tKmin %d\n",obj->Kmin);
+    printf("\tKmax %d\n",obj->Kmax);
+    printf("\tGmax %d\n",obj->Gmax);
+    printf("\tAl %d\n",obj->Al);
+    printf("\tP %d\n",obj->P);
+    printf("\tN %d\n",obj->N);
+    printf("\tT %d\n",obj->T);
+    printf("\tG %d\n",obj->G);
+    printf("\tZ %d\n",obj->Z);
+    printf("\tK %d\n",obj->K);
+    printf("\tL %d\n",obj->L);
+    printf("\tS %d\n",obj->S);
+    printf("\tH %d\n",obj->H);
+    printf("------------\n");
+}
+
+byte* serialize_int(byte*buffer, int value)
+{
+  /* Write big-endian int value into buffer; assumes 32-bit int and 8-bit char. */
+  buffer[0] = value >> 24;
+  buffer[1] = value >> 16;
+  buffer[2] = value >> 8;
+  buffer[3] = value;
+  return buffer + 4;
+}
+byte* serialize_char(byte*buffer, char value)
+{
+  buffer[0] = value;
+  return buffer + 1;
+} 
+byte* raptor_serialze(raptor* obj,byte* buffer){
+    printf("obj -> %p and buffer %p \n",obj,buffer); 
+    buffer = serialize_int(buffer,obj->F);
+    printf("done f\n");
+    buffer = serialize_int(buffer,obj->W);
+    printf("done W\n");
+    buffer = serialize_int(buffer,obj->P);
+    buffer = serialize_int(buffer,obj->Al);
+    buffer = serialize_int(buffer,obj->Kmax);
+    buffer = serialize_int(buffer,obj->Kmin);
+    buffer = serialize_int(buffer,obj->Gmax);
+    buffer = serialize_int(buffer,obj->T);
+    buffer = serialize_int(buffer,obj->Z);
+    buffer = serialize_int(buffer,obj->N);
+    buffer = serialize_int(buffer,obj->K);
+    buffer = serialize_int(buffer,obj->L);
+    buffer = serialize_int(buffer,obj->S);
+    buffer = serialize_int(buffer,obj->H);
+    buffer = serialize_int(buffer,obj->G);
+    return buffer;
+} 

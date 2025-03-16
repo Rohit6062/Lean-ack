@@ -116,6 +116,19 @@ void err_quit(char* str){
     exit(0);
 }
 
+
+void raptor_print_socket(sockinfo* sock){
+    printf("\t<- sockinfo -> \n");
+    printf("\trecieve_fd = %d\n",sock->recieve_fd);
+    printf("\tsend_fd = %d\n",sock->send_fd);
+    printf("\tfile_size = %ld\n",sock->file_size);
+    printf("\tsend_addr = %p\n",sock->send_addr);
+    printf("\tsend_addr_len = %d\n",sock->send_addr_len);
+    printf("\tbuffer_len = %d\n",sock->buffer_len);
+    printf("\tbuffer = %p : %s\n",sock->buffer,sock->buffer);
+    printf("\t -------------- \n");
+}   
+
 // calculate and return checksum
 bool checksum(byte* data,uint32_t len){
     byte out=0;
@@ -159,13 +172,17 @@ sockinfo* raptor_accept_req(){
     byte* data = (byte*) calloc(sizeof(byte),1025);
     output->send_addr_len = sizeof(output->send_addr);
     printf("setup Done\n");
+    /*
     if((output->buffer_len = recvfrom(
         output->recieve_fd,
         output->buffer,
         Bufflen,
         0,
         (SA*)output->send_addr,
-        &output->send_addr_len))==minus_one)err_quit("raptor_accept_req recvfrom");
+        &output->send_addr_len))==minus_one)err_quit("raptor_accept_req recvfrom"); 
+    */
+    strcpy(output->buffer+1,"test");
+    output->buffer_len = 5;
     output->buffer[output->buffer_len] = 0;
     printf("bufferlen %d\n",output->buffer_len);
     if((output->send_fd = socket(AF_INET,SOCK_DGRAM,0))==-1)err_quit("socket raptor_accept_req");
@@ -213,6 +230,12 @@ void raptor_send_object(raptor* obj,sockinfo* sock){
     // send object as metadata
     sock->buffer[0]=0;
     memcpy(sock->buffer+1,obj,sizeof(*obj));
+    byte temp = sock->buffer+1;
+    temp = raptor_serialze(obj,temp);
+    raptor* obj2 = (raptor*) malloc(sizeof(raptor));
+    memcpy(obj2,obj,sizeof(*obj2));
+    raptor_print_object((raptor*)sock->buffer+1);
+    raptor_print_object(obj2); 
     if((sendto(sock->send_fd,sock->buffer,sizeof(obj)+1,0,(SA*)sock->send_addr,sock->send_addr_len))==-1)perror("sendto src");
 }
 

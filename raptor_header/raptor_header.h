@@ -73,4 +73,5 @@ byte** rapter_generate_intermediate_symb(raptor* obj,byte** data);
 void xor(byte* result,byte* a,byte* b,uint32_t n);
 void copy_row(gf2matrix* mat1,uint32_t mat1_row,gf2matrix* mat2,uint32_t mat2_row);
 void LTEncode(raptor* obj,gf2matrix* mat,uint32_t x, uint32_t row_index ,uint32_t L_);
+void raptor_print_object(raptor* obj);
 #endif
