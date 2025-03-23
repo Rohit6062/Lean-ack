@@ -1,0 +1,1 @@
+gcc  -Wall -Wextra -lm -I.  -c sender_test.c -o sender_test.o 
