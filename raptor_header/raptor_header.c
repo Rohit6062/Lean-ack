@@ -263,17 +263,36 @@ int raptor_build_constraints_mat(raptor *obj, gf2matrix *A){
 }
 
 void raptor_compute_params(raptor *obj){
-    if (!obj->Al && !obj->K && !obj->Kmax && !obj->Kmin && !obj->Gmax){printf("parameters required\n");exit(0);}
-    uint32_t X = floor(sqrt(2 * obj->K));
-    for (; X * X < 2 * obj->K + X; X++);
-    for (obj->S = ceil(0.01 * obj->K) + X; !is_prime(obj->S); obj->S++);
-    obj->H=1;
-    while(true){
-        if(choose(obj->H,ceil( (double)obj->H/(double)2 )) > obj->K+obj->S )break;
-        obj->H = obj->H + 1;
-    }
-    obj->L = obj->K + obj->S + obj->H;
+    
 }
+raptor* raptor_init_obj(uint32_t file_size){
+  raptor* output = (raptor*) malloc(sizeof(raptor));
+  output->F = file_size;
+  printf("filesize %ld\n",output->F);
+  output->Kmin = 1024;
+  output->Kmax = 8192;
+  output->Gmax = 10;
+  output->Al   = 4;
+  output->P    = 65480;
+  uint32_t W = 10485760;
+  output->G = min(min(ceil( devide( output->P*output->Kmin,output->F)) , ceil(devide(output->P,output->Al))), output->Gmax);
+  output->T = floor(devide(output->P,(output->Al*output->G)))*output->Al;
+  double kt =(double) ceil(devide(output->F,output->T));
+  output->Z = ceil(devide(kt,output->Kmax));
+  output->N = 1;//min(ceil(devide(kt,output->Z) * devide(output->T,W)), ceil(devide(output->T,output->Al)));
+  output->K = ceil(devide((uint32_t) kt,output->Z));
+  uint32_t X = floor(sqrt(2 * output->K));
+  for (; X * X < 2 * output->K + X; X++);
+  for (output->S = ceil(0.01 * output->K) + X; !is_prime(output->S); output->S++);
+  output->H=1;
+  while(true){
+      if(choose(output->H,ceil( (double)output->H/(double)2 )) > output->K+output->S )break;
+      output->H = output->H + 1;
+  }
+  output->L = output->K + output->S + output->H;
+  return output;
+}
+
 
 void raptor_multiplication(raptor *obj, gf2matrix *A, byte **block,byte** res_block){
     for (uint32_t j = 0; j < get_ncols(A); j++){

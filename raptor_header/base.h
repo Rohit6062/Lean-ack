@@ -172,7 +172,6 @@ sockinfo* raptor_accept_req(){
     byte* data = (byte*) calloc(sizeof(byte),1025);
     output->send_addr_len = sizeof(output->send_addr);
     printf("setup Done\n");
-    /*
     if((output->buffer_len = recvfrom(
         output->recieve_fd,
         output->buffer,
@@ -180,8 +179,6 @@ sockinfo* raptor_accept_req(){
         0,
         (SA*)output->send_addr,
         &output->send_addr_len))==minus_one)err_quit("raptor_accept_req recvfrom"); 
-    */
-    strcpy(output->buffer+1,"test");
     output->buffer_len = 5;
     output->buffer[output->buffer_len] = 0;
     printf("bufferlen %d\n",output->buffer_len);
@@ -227,16 +224,11 @@ void* raptor_listen(void* x){
 }
 
 void raptor_send_object(raptor* obj,sockinfo* sock){
-    // send object as metadata
-    sock->buffer[0]=0;
-    memcpy(sock->buffer+1,obj,sizeof(*obj));
-    byte temp = sock->buffer+1;
-    temp = raptor_serialze(obj,temp);
-    raptor* obj2 = (raptor*) malloc(sizeof(raptor));
-    memcpy(obj2,obj,sizeof(*obj2));
-    raptor_print_object((raptor*)sock->buffer+1);
-    raptor_print_object(obj2); 
-    if((sendto(sock->send_fd,sock->buffer,sizeof(obj)+1,0,(SA*)sock->send_addr,sock->send_addr_len))==-1)perror("sendto src");
+    // send object as metadata  
+    raptor_print_object(obj);
+    uint32_t network_order = htonl(obj->F); 
+    sock->send_addr_len = sizeof(*sock->send_addr);
+    if((sendto(sock->send_fd,&network_order,sizeof(network_order),0,(SA*)sock->send_addr,sock->send_addr_len))==-1)err_quit("sendto src raptor_send_object");
 }
 
 void raptor_send_block(raptor* obj,sockinfo* sock,uint16_t block_no){
@@ -296,7 +288,7 @@ void raptor_send_block(raptor* obj,sockinfo* sock,uint16_t block_no){
         buffer[2] = symb_id >> 8;
         buffer[3] = symb_id++;
         if((n=sendto(sock->send_fd,buffer,obj->T+header_size,0,(SA*)sock->send_addr,sock->send_addr_len))==-1)err_quit("sendto enc");
-    }
+        }
 }
 
 void stostr(byte* output,uint16_t number){

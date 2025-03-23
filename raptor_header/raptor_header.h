@@ -60,7 +60,7 @@ int raptor_build_LDPC_submat(int K, int S, gf2matrix *A);
 int raptor_build_Half_submat(unsigned int K, unsigned int S, unsigned int H,gf2matrix *A);
 int raptor_build_LT_submat(uint32_t K, uint32_t S, uint32_t H, raptor *obj,gf2matrix *A);
 int raptor_build_constraints_mat(raptor *obj, gf2matrix *A);
-void raptor_compute_params(raptor *obj);
+raptor* raptor_init_obj(uint32_t file_size);
 void raptor_build_LT_mat(uint32_t N_, raptor *obj, gf2matrix *G_LT,uint32_t *ESIs);
 void raptor_multiplication(raptor *obj, gf2matrix *A, byte **block,byte** res_block);
 void raptor_encode(uint8_t *src_s, uint8_t *enc_s, raptor *obj, gf2matrix *A);
@@ -74,4 +74,5 @@ void xor(byte* result,byte* a,byte* b,uint32_t n);
 void copy_row(gf2matrix* mat1,uint32_t mat1_row,gf2matrix* mat2,uint32_t mat2_row);
 void LTEncode(raptor* obj,gf2matrix* mat,uint32_t x, uint32_t row_index ,uint32_t L_);
 void raptor_print_object(raptor* obj);
+byte* raptor_serialze(raptor* obj,byte* buffer);
 #endif
