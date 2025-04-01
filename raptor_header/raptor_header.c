@@ -293,6 +293,17 @@ raptor* raptor_init_obj(uint32_t file_size){
   return output;
 }
 
+raptor* raptor_init_obj2(uint32_t file_size){
+  raptor* output = (raptor*) malloc(sizeof(raptor));
+  output->F = file_size;
+  printf("filesize %ld\n",output->F);
+  output->Kmin = 1024;
+  output->Kmax = 8192;
+  output->Gmax = 10;
+  output->Al   = 4;
+  output->P    = 65480;
+  uint32_t W = 10485760;
+}
 
 void raptor_multiplication(raptor *obj, gf2matrix *A, byte **block,byte** res_block){
     for (uint32_t j = 0; j < get_ncols(A); j++){

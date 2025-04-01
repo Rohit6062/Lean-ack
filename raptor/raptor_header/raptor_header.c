@@ -1,45 +1,52 @@
 #include "raptor_header.h"
 #include <math.h>
 #include <stdint.h>
-#include<stdbool.h>
+#include <stdbool.h>
 
-
-
-void generate_gray_seq(uint32_t *gray_seq) {
-  for (uint32_t i = 0; i < 4000; i++)
-    gray_seq[i] = i ^ (uint32_t)(floor(i / 2));
+void generate_gray_seq(uint32_t *gray_seq)
+{
+    for (uint32_t i = 0; i < 4000; i++)
+        gray_seq[i] = i ^ (uint32_t)(floor(i / 2));
 }
 
-void xor(byte* result,byte* a,byte* b,uint32_t n){
+void xor (byte * result, byte *a, byte *b, uint32_t n) {
     // printf("\t%p %p\n",a,b);
-    for(uint32_t i=0;i<n;i++){
+    for (uint32_t i = 0; i < n; i++)
+    {
         // printf("\t %d\t%d\n",n,i);
-      result[i] = a[i] ^ b[i];
-  }
+        result[i] = a[i] ^ b[i];
+    }
 }
 
-uint64_t factorial(uint64_t n) {
-  uint64_t result = 1, i;
+    uint64_t factorial(uint64_t n)
+{
+    uint64_t result = 1, i;
 
-  for (i = 2; i <= n; i++)
-    result *= i;
+    for (i = 2; i <= n; i++)
+        result *= i;
 
-  return result;
+    return result;
 }
-int is_prime(uint32_t num) {
-    if (num <= 1) {
+int is_prime(uint32_t num)
+{
+    if (num <= 1)
+    {
         return 0; // Numbers less than or equal to 1 are not prime
     }
-    if (num == 2) {
+    if (num == 2)
+    {
         return 1; // 2 is the only even prime number
     }
-    if (num % 2 == 0) {
+    if (num % 2 == 0)
+    {
         return 0; // Any other even number is not prime
     }
 
     // Only check odd numbers from 3 to sqrt(num)
-    for (int i = 3; i*i <= num; i += 2) {
-        if (num % i == 0) {
+    for (int i = 3; i * i <= num; i += 2)
+    {
+        if (num % i == 0)
+        {
             return 0; // If divisible by any number, it's not prime
         }
     }
@@ -47,32 +54,37 @@ int is_prime(uint32_t num) {
     return 1; // If no divisors are found, it's prime
 }
 
-uint32_t choose(int32_t i, int32_t j) {
-  // printf("%d %d i,j\n",i,j);
-  if(i==j || !j)return factorial(i);
-  return (factorial(i) / (factorial(j) * factorial(abs(i - j))));
+uint32_t choose(int32_t i, int32_t j)
+{
+    // printf("%d %d i,j\n",i,j);
+    if (i == j || !j)
+        return factorial(i);
+    return (factorial(i) / (factorial(j) * factorial(abs(i - j))));
 }
 
-void raptor_Trip(uint32_t K, uint32_t X, uint32_t triple[3], raptor *obj) {
-    obj->total_precoding_symbols  = obj->source_symbols_per_block  + obj->ldpc_symbols  + obj->half_symbols ;
-    uint32_t L_ = obj->total_precoding_symbols ;
+void raptor_Trip(uint32_t K, uint32_t X, uint32_t triple[3], raptor *obj)
+{
+    obj->total_precoding_symbols = obj->source_symbols_per_block + obj->ldpc_symbols + obj->half_symbols;
+    uint32_t L_ = obj->total_precoding_symbols;
     while (!is_prime(L_))
-    L_++;
+        L_++;
     uint32_t A;
     uint32_t B;
 
     uint32_t Q = 65521;
-    if(K>=4){
+    if (K >= 4)
+    {
         A = (53591 + J[K - 4] * 997) % Q;
         B = 10267 * (J[K - 4] + 1) % Q;
     }
-    else{
-        A =(53591 + J[0]*997)%Q;
-        B = 10267 + (J[0]+1)%Q;
+    else
+    {
+        A = (53591 + J[0] * 997) % Q;
+        B = 10267 + (J[0] + 1) % Q;
     }
     uint32_t Y = (B + X * A) % Q;
     // raptor_Rand is passed 2^^20 as required by the RFC5053
-    uint32_t v = raptor_Rand(Y, 0, 1<<20);
+    uint32_t v = raptor_Rand(Y, 0, 1 << 20);
     uint32_t d = raptor_Deg(v);
     uint32_t a = 1 + raptor_Rand(Y, 1, L_ - 1);
     uint32_t b = raptor_Rand(Y, 2, L_);
@@ -83,7 +95,7 @@ void raptor_Trip(uint32_t K, uint32_t X, uint32_t triple[3], raptor *obj) {
 }
 
 // raptor* build_raptor(unsigned long file_size){
-//     raptor* out = (raptor*) malloc(sizeof(raptor));    
+//     raptor* out = (raptor*) malloc(sizeof(raptor));
 //     bzero(out,sizeof(out));
 //     out->K = file_size;
 //     out->min_source_symbols_per_block  = 1024;
@@ -95,280 +107,412 @@ void raptor_Trip(uint32_t K, uint32_t X, uint32_t triple[3], raptor *obj) {
 // }
 //
 //
-uint32_t raptor_Rand(uint32_t X, uint32_t i, uint32_t m) {
-  return (V0[(X + i) % 256] ^ V1[((uint32_t)floor(X / 256) + i) % 256]) % m;
+uint32_t raptor_Rand(uint32_t X, uint32_t i, uint32_t m)
+{
+    return (V0[(X + i) % 256] ^ V1[((uint32_t)floor(X / 256) + i) % 256]) % m;
 }
 
-uint32_t raptor_Deg(uint32_t v) {
-  if (v < 10241)
-    return 1;
-  if (v < 491582)
-    return 2;
-  if (v < 712794)
-    return 3;
-  if (v < 831695)
-    return 4;
-  if (v < 948446)
-    return 10;
-  if (v < 1032189)
-    return 11;
-  if (v < 1048576)
-    return 40;
-  return -1;
+uint32_t raptor_Deg(uint32_t v)
+{
+    if (v < 10241)
+        return 1;
+    if (v < 491582)
+        return 2;
+    if (v < 712794)
+        return 3;
+    if (v < 831695)
+        return 4;
+    if (v < 948446)
+        return 10;
+    if (v < 1032189)
+        return 11;
+    if (v < 1048576)
+        return 40;
+    return -1;
 }
 
-int raptor_build_LDPC_submat(int K, int ldpc_symbols , gf2matrix *A) {
-  int a = 0, b = 0;
-  for(int i = 0; i < K; i++){
-    a = 1 + ((int)floor(i / ldpc_symbols ) % (ldpc_symbols  - 1));
-    b = i % ldpc_symbols ;
-    set_entry(A, b, i, 1);
-    b = (b + a) % ldpc_symbols ;
-    set_entry(A, b, i, 1);
-    b = (b + a) % ldpc_symbols ;
-    set_entry(A, b, i, 1);
-  }
+int raptor_build_LDPC_submat(int K, int ldpc_symbols, gf2matrix *A)
+{
+    int a = 0, b = 0;
+    for (int i = 0; i < K; i++)
+    {
+        a = 1 + ((int)floor(i / ldpc_symbols) % (ldpc_symbols - 1));
+        b = i % ldpc_symbols;
+        set_entry(A, b, i, 1);
+        b = (b + a) % ldpc_symbols;
+        set_entry(A, b, i, 1);
+        b = (b + a) % ldpc_symbols;
+        set_entry(A, b, i, 1);
+    }
     return 0;
 }
 
-int raptor_build_Half_submat(unsigned int K, unsigned int ldpc_symbols , unsigned int half_symbols ,gf2matrix *A) {
-  uint32_t g[4000];
-  generate_gray_seq(&g[0]);
-  uint32_t H_ = ceil((float)half_symbols  / 2.0);
-  size_t n_words = 4000;
-  uint32_t m[n_words];
+int raptor_build_Half_submat(unsigned int K, unsigned int ldpc_symbols, unsigned int half_symbols, gf2matrix *A)
+{
+    uint32_t g[4000];
+    generate_gray_seq(&g[0]);
+    uint32_t H_ = ceil((float)half_symbols / 2.0);
+    size_t n_words = 4000;
+    uint32_t m[n_words];
 
-  uint32_t j = 0;
-  for (size_t i = 0; i < n_words; i++){
-    if (__builtin_popcount(g[i]) == H_) {
-      m[j] = g[i];
-      j++;
-    }
-    // printf("j = %d\n", j);
+    uint32_t j = 0;
+    for (size_t i = 0; i < n_words; i++)
+    {
+        if (__builtin_popcount(g[i]) == H_)
+        {
+            m[j] = g[i];
+            j++;
+        }
+        // printf("j = %d\n", j);
     }
 
-  // Build the G_HALF submatrix
-  for (uint32_t h = 0; h < half_symbols ; h++) {
-    for (uint32_t j = 0; j < K + ldpc_symbols ; j++) {
-      if (m[j] & (1UL << h)) {
-        set_entry(A, h + ldpc_symbols , j, 1);
-      }
+    // Build the G_HALF submatrix
+    for (uint32_t h = 0; h < half_symbols; h++)
+    {
+        for (uint32_t j = 0; j < K + ldpc_symbols; j++)
+        {
+            if (m[j] & (1UL << h))
+            {
+                set_entry(A, h + ldpc_symbols, j, 1);
+            }
+        }
     }
-  }
     return 0;
 }
 
-int raptor_build_LT_submat(uint32_t K, uint32_t ldpc_symbols , uint32_t half_symbols , raptor *obj,gf2matrix *A) {
-  uint32_t total_precoding_symbols  = K + ldpc_symbols  + half_symbols ;
-  uint32_t L_ = total_precoding_symbols ;
-  while (!is_prime(L_))
-    L_++;
-  for(uint32_t i = 0; i < K; i++)printf("%d\n",i),LTEncode(obj,A,i,i+ldpc_symbols +half_symbols ,L_);
+/**
+ * Struct containing all the fileds needed by the raptor code to operate
+ * @struct raptor
+ * @brief Structure holding all the fields needed by raptor encoder and
+ * decoder
+ * @param raptor::file_size_bytes Transfer length of the object, in bytes
+ * @param raptor::symbol_alignment symbol alignment parameter
+ * @param raptor::symbol_size_bytes  symbol size, in bytes
+ * @param raptor::num_source_blocks  number of source blocks
+ * @param raptor::num_sub_blocks  number of sub-blocks in each source block
+ * @param raptor::sub_block_size_target  a target on the sub-block size
+ * @param raptor::max_packet_payload_size  maximum packet payload size (multiple of ~symbol_alignment~)
+ * @param raptor::max_source_symbols_per_block  maximum number of source symbols per source block
+ * @param raptor::min_source_symbols_per_block  minimum target on the number of symbols per source block
+ * @param raptor::max_symbols_per_packet  maximum target number of symbols per packet
+ * @param raptor::source_symbols_per_block  denotes the number of symbols in a single source block
+ * @param raptor::total_precoding_symbols  denotes the number of pre-coding symbols for a single source block
+ * @param raptor::ldpc_symbols  denotes the number of total_precoding_symbols DPC symbols for a single source block
+ * @param raptor::half_symbols  denotes the number of Half symbols for a single source block
+ * @param raptor::symbols_per_group  the number of symbols within an encoding symbol group
+ */
+
+int raptor_build_LT_submat(uint32_t K, uint32_t ldpc_symbols, uint32_t half_symbols, raptor *obj, gf2matrix *A)
+{
+    uint32_t total_precoding_symbols = K + ldpc_symbols + half_symbols;
+    uint32_t L_ = total_precoding_symbols;
+    while (!is_prime(L_))
+        L_++;
+    for (uint32_t i = 0; i < K; i++)
+        printf("%d\n", i), LTEncode(obj, A, i, i + ldpc_symbols + half_symbols, L_);
     return 0;
 }
 
-void LTEncode(raptor* obj,gf2matrix* mat,uint32_t x, uint32_t row_index ,uint32_t L_){
+void LTEncode(raptor *obj, gf2matrix *mat, uint32_t x, uint32_t row_index, uint32_t L_)
+{
     printf("done\n");
-    uint32_t* triple = (uint32_t*)malloc(sizeof(uint32_t)*3);
-    raptor_Trip(obj->source_symbols_per_block ,x,triple,obj);
+    uint32_t *triple = (uint32_t *)malloc(sizeof(uint32_t) * 3);
+    raptor_Trip(obj->source_symbols_per_block, x, triple, obj);
     printf("triple\n");
-    uint32_t j_max = fmin((triple[0]-1),(obj->total_precoding_symbols -1));
-    while(triple[2] >= obj->total_precoding_symbols ) triple[2] = (triple[2] + triple[1]) % L_;
-    set_entry(mat,row_index,triple[2],1);
-    for(uint32_t j =1;j<=j_max;j++){
-        do {
+    uint32_t j_max = fmin((triple[0] - 1), (obj->total_precoding_symbols - 1));
+    while (triple[2] >= obj->total_precoding_symbols)
+        triple[2] = (triple[2] + triple[1]) % L_;
+    set_entry(mat, row_index, triple[2], 1);
+    for (uint32_t j = 1; j <= j_max; j++)
+    {
+        do
+        {
             triple[2] = (triple[2] + triple[1]) % L_;
-        }while (triple[2] >= obj->total_precoding_symbols ); 
-        set_entry(mat,row_index,triple[2],1);
+        } while (triple[2] >= obj->total_precoding_symbols);
+        set_entry(mat, row_index, triple[2], 1);
     }
 }
-void raptor_build_LT_mat(uint32_t N_, raptor *obj, gf2matrix *G_LT,uint32_t *ESIs) {
+void raptor_build_LT_mat(uint32_t N_, raptor *obj, gf2matrix *G_LT, uint32_t *ESIs)
+{
     printf("N_ = %d\n", N_);
-    obj->total_precoding_symbols  = obj->source_symbols_per_block  + obj->ldpc_symbols  + obj->half_symbols ;
-    uint32_t L_ = obj->total_precoding_symbols ;
-    while (!is_prime(L_))L_++;
-    for (uint32_t i = 0; i < N_; i++) {
-        LTEncode(obj,G_LT,ESIs[i],i,L_);
+    obj->total_precoding_symbols = obj->source_symbols_per_block + obj->ldpc_symbols + obj->half_symbols;
+    uint32_t L_ = obj->total_precoding_symbols;
+    while (!is_prime(L_))
+        L_++;
+    for (uint32_t i = 0; i < N_; i++)
+    {
+        LTEncode(obj, G_LT, ESIs[i], i, L_);
     }
 }
 
-int gaussian_elim(gf2matrix* mat,byte** result, raptor* obj, uint32_t* d){
+int gaussian_elim(gf2matrix *mat, byte **result, raptor *obj, uint32_t *d)
+{
     int tmp;
     bool is_start = true;
-    queue* stk = queue_build();
+    queue *stk = queue_build();
     uint32_t i = 0;
-    uint32_t* counter = (uint32_t*) calloc(sizeof(uint32_t),get_nrows(mat));
-    byte* temp_buffer = (byte*)calloc(sizeof(byte),obj->symbol_size_bytes);
-    for(i=0;i<get_ncols(mat);i++){
-        if(!get_entry(mat,i,i)){
+    uint32_t *counter = (uint32_t *)calloc(sizeof(uint32_t), get_nrows(mat));
+    byte *temp_buffer = (byte *)calloc(sizeof(byte), obj->symbol_size_bytes);
+    for (i = 0; i < get_ncols(mat); i++)
+    {
+        if (!get_entry(mat, i, i))
+        {
             is_start = true;
-            for(uint32_t j=i+1;j<get_nrows(mat);j++){
-                if(get_entry(mat,j,i) && (is_start || d[j] <= d[i])){
-                    memcpy(temp_buffer,result[i],obj->symbol_size_bytes );
-                    memcpy(result[j],result[i],obj->symbol_size_bytes );
-                    memcpy(result[i],temp_buffer,obj->symbol_size_bytes );
+            for (uint32_t j = i + 1; j < get_nrows(mat); j++)
+            {
+                if (get_entry(mat, j, i) && (is_start || d[j] <= d[i]))
+                {
+                    memcpy(temp_buffer, result[i], obj->symbol_size_bytes);
+                    memcpy(result[j], result[i], obj->symbol_size_bytes);
+                    memcpy(result[i], temp_buffer, obj->symbol_size_bytes);
                     tmp = d[i];
                     d[i] = d[j];
                     d[j] = tmp;
-                    swap_rows(mat,i,j);
+                    swap_rows(mat, i, j);
                     is_start = false;
                 }
             }
         }
-        if(!d[i]) return -1;
-        if(d[i]>1){queue_push(stk,i);continue;}
-        for(uint32_t j=0;j<get_nrows(mat);j++){
-            if(j != i && get_entry(mat,j,i)){
-                set_entry(mat,j,i,0);
+        if (!d[i])
+            return -1;
+        if (d[i] > 1)
+        {
+            queue_push(stk, i);
+            continue;
+        }
+        for (uint32_t j = 0; j < get_nrows(mat); j++)
+        {
+            if (j != i && get_entry(mat, j, i))
+            {
+                set_entry(mat, j, i, 0);
                 // result[j]^=result[i];
-                xor(result[j],result[j],result[i],obj->symbol_size_bytes );
-                d[j]-=1;
+                xor(result[j], result[j], result[i], obj->symbol_size_bytes);
+                d[j] -= 1;
             }
         }
     }
     // print_matrix2(mat,result);
     queue_display(stk);
-    while(!queue_isempty(stk)){
+    while (!queue_isempty(stk))
+    {
         i = queue_pop(stk);
-        if(counter[i]>5)continue;
+        if (counter[i] > 5)
+            continue;
         counter[i]++;
-        if(d[i]>1){
-            queue_push(stk,i);
+        if (d[i] > 1)
+        {
+            queue_push(stk, i);
             continue;
         }
-        for(uint32_t j=0;j<get_nrows(mat);j++){
-          if(j != i && get_entry(mat,j,i)){
-              set_entry(mat,j,i,0);
-              xor(result[j],result[j],result[i],obj->symbol_size_bytes );
-              // result[j]^=result[i];
-              d[j]-=1;
-          }
-      }
-      // print_matrix2(mat,result);
-  }
-  return 0;
-} 
-int raptor_build_constraints_mat(raptor *obj, gf2matrix *A){
-    raptor_build_LDPC_submat(obj->source_symbols_per_block , obj->ldpc_symbols , A);
-    raptor_build_Half_submat(obj->source_symbols_per_block , obj->ldpc_symbols , obj->half_symbols , A);
-    for (uint32_t i = 0; i < obj->ldpc_symbols ; i++)
-    set_entry(A, i, obj->source_symbols_per_block  + i, 1);
-    for (uint32_t i = 0; i < obj->half_symbols ; i++)
-    set_entry(A, obj->ldpc_symbols  + i, obj->source_symbols_per_block  + obj->ldpc_symbols  + i, 1);
-    raptor_build_LT_submat(obj->source_symbols_per_block , obj->ldpc_symbols , obj->half_symbols , obj, A);
+        for (uint32_t j = 0; j < get_nrows(mat); j++)
+        {
+            if (j != i && get_entry(mat, j, i))
+            {
+                set_entry(mat, j, i, 0);
+                xor(result[j], result[j], result[i], obj->symbol_size_bytes);
+                // result[j]^=result[i];
+                d[j] -= 1;
+            }
+        }
+        // print_matrix2(mat,result);
+    }
+    return 0;
+}
+int raptor_build_constraints_mat(raptor *obj, gf2matrix *A)
+{
+    raptor_build_LDPC_submat(obj->source_symbols_per_block, obj->ldpc_symbols, A);
+    raptor_build_Half_submat(obj->source_symbols_per_block, obj->ldpc_symbols, obj->half_symbols, A);
+    for (uint32_t i = 0; i < obj->ldpc_symbols; i++)
+        set_entry(A, i, obj->source_symbols_per_block + i, 1);
+    for (uint32_t i = 0; i < obj->half_symbols; i++)
+        set_entry(A, obj->ldpc_symbols + i, obj->source_symbols_per_block + obj->ldpc_symbols + i, 1);
+    raptor_build_LT_submat(obj->source_symbols_per_block, obj->ldpc_symbols, obj->half_symbols, obj, A);
     gaussjordan_inv(A);
     print_matrix(A);
     printf("done raptor_build_constraints_mat\n");
     return 0;
 }
 
-void raptor_compute_params(raptor *obj){
-    
+void raptor_compute_params(raptor *obj)
+{
 }
-raptor* raptor_init_obj(uint32_t file_size){
-  raptor* output = (raptor*) malloc(sizeof(raptor));
-  output->file_size_bytes = file_size;
-  printf("filesize %ld\n",output->file_size_bytes);
-  output->min_source_symbols_per_block  = 1024;
-  output->max_source_symbols_per_block  = 8192;
-  output->max_symbols_per_packet  = 10;
-  output->symbol_alignment   = 4;
-  output->max_packet_payload_size     = 65480;
-  uint32_t sub_block_size_target  = 10485760;
-  output->symbols_per_group  = min(min(ceil( devide( output->max_packet_payload_size *output->min_source_symbols_per_block ,output->file_size_bytes)) , ceil(devide(output->max_packet_payload_size ,output->symbol_alignment))), output->max_symbols_per_packet );
-  output->symbol_size_bytes  = floor(devide(output->max_packet_payload_size ,(output->symbol_alignment*output->symbols_per_group )))*output->symbol_alignment;
-  double kt =(double) ceil(devide(output->file_size_bytes,output->symbol_size_bytes ));
-  output->num_source_blocks  = ceil(devide(kt,output->max_source_symbols_per_block ));
-  output->num_sub_blocks  = 1;//min(ceil(devide(kt,output->num_source_blocks ) * devide(output->symbol_size_bytes ,sub_block_size_target )), ceil(devide(output->symbol_size_bytes ,output->symbol_alignment)));
-  output->source_symbols_per_block  = ceil(devide((uint32_t) kt,output->num_source_blocks ));
-  uint32_t X = floor(sqrt(2 * output->source_symbols_per_block ));
-  for (; X * X < 2 * output->source_symbols_per_block  + X; X++);
-  for (output->ldpc_symbols  = ceil(0.01 * output->source_symbols_per_block ) + X; !is_prime(output->ldpc_symbols ); output->ldpc_symbols ++);
-  output->half_symbols =1;
-  while(true){
-      if(choose(output->half_symbols ,ceil( (double)output->half_symbols /(double)2 )) > output->source_symbols_per_block +output->ldpc_symbols  )break;
-      output->half_symbols  = output->half_symbols  + 1;
-  }
-  output->total_precoding_symbols  = output->source_symbols_per_block  + output->ldpc_symbols  + output->half_symbols ;
-  return output;
-}
-
-
-void raptor_multiplication(raptor *obj, gf2matrix *A, byte **block,byte** res_block){
-    for (uint32_t j = 0; j < get_ncols(A); j++){
-        for (uint32_t i = 0; i < get_nrows(A); i++){
-            if(get_entry(A, i,j))xor(res_block[i],res_block[i],block[j],obj->symbol_size_bytes );
-        }
+raptor *raptor_init_obj2(uint32_t file_size)
+{
+    raptor *output = (raptor *)malloc(sizeof(raptor));
+    output->file_size_bytes = file_size;
+    printf("filesize %ld\n", output->file_size_bytes);
+    output->min_source_symbols_per_block = 1024;
+    output->max_source_symbols_per_block = 8192;
+    output->max_symbols_per_packet = 10;
+    output->symbol_alignment = 4;
+    output->max_packet_payload_size = 65480;
+    uint32_t sub_block_size_target = 10485760;
+    output->symbols_per_group = min(min(ceil(devide(output->max_packet_payload_size * output->min_source_symbols_per_block, output->file_size_bytes)), ceil(devide(output->max_packet_payload_size, output->symbol_alignment))), output->max_symbols_per_packet);
+    output->symbol_size_bytes = floor(devide(output->max_packet_payload_size, (output->symbol_alignment * output->symbols_per_group))) * output->symbol_alignment;
+    double kt = (double)ceil(devide(output->file_size_bytes, output->symbol_size_bytes));
+    output->num_source_blocks = ceil(devide(kt, output->max_source_symbols_per_block));
+    output->num_sub_blocks = 1; // min(ceil(devide(kt,output->num_source_blocks ) * devide(output->symbol_size_bytes ,sub_block_size_target )), ceil(devide(output->symbol_size_bytes ,output->symbol_alignment)));
+    output->source_symbols_per_block = ceil(devide((uint32_t)kt, output->num_source_blocks));
+    uint32_t X = floor(sqrt(2 * output->source_symbols_per_block));
+    for (; X * X < 2 * output->source_symbols_per_block + X; X++)
+        ;
+    for (output->ldpc_symbols = ceil(0.01 * output->source_symbols_per_block) + X; !is_prime(output->ldpc_symbols); output->ldpc_symbols++)
+        ;
+    output->half_symbols = 1;
+    while (true)
+    {
+        if (choose(output->half_symbols, ceil((double)output->half_symbols / (double)2)) > output->source_symbols_per_block + output->ldpc_symbols)
+            break;
+        output->half_symbols = output->half_symbols + 1;
     }
-    printf("Done raptor_multiplication\n");
-}
-void copy_row(gf2matrix* mat1,uint32_t mat1_row,gf2matrix* mat2,uint32_t mat2_row){
-  for(uint32_t i=0;i<mat1->n_words;i++){
-    mat1->rows[mat1_row][i]^=mat2->rows[mat2_row][i];
-  }
-}
-
-byte** rapter_generate_intermediate_symb(raptor* obj,byte** data){
-    gf2matrix* A = malloc(sizeof(gf2matrix));
-    byte** output = (byte**) calloc(sizeof(byte*),obj->total_precoding_symbols );
-    for(uint32_t i=0;i<obj->total_precoding_symbols ;i++)output[i] = (byte*)calloc(sizeof(byte),obj->symbol_size_bytes );
-    allocate_gf2matrix(A,obj->total_precoding_symbols ,obj->total_precoding_symbols );
-    raptor_build_constraints_mat(obj,A);
-    raptor_multiplication(obj,A,data,output);
+    output->total_precoding_symbols = output->source_symbols_per_block + output->ldpc_symbols + output->half_symbols;
     return output;
 }
 
-void raptor_print_object(raptor* obj){
+raptor *raptor_init_obj(uint32_t file_size)
+{
+    raptor *output = (raptor *)malloc(sizeof(raptor));
+    if (!output)
+    {
+        printf("Memory allocation failed for Raptor object.\n");
+        return NULL;
+    }
+
+    output->file_size_bytes = file_size;
+    printf("filesize %ld\n", output->file_size_bytes);
+
+    // Predefined constants
+    output->min_source_symbols_per_block = 1024;
+    output->max_source_symbols_per_block = 8192;
+    output->max_symbols_per_packet = 10;
+    output->symbol_alignment = 4;
+    output->max_packet_payload_size = 65480;
+
+    // Calculate symbols per group
+    output->symbols_per_group = min(
+        min(
+            ceil((double)(output->max_packet_payload_size * output->min_source_symbols_per_block) / output->file_size_bytes),
+            ceil((double)output->max_packet_payload_size / output->symbol_alignment)),
+        output->max_symbols_per_packet);
+
+    // Calculate symbol size in bytes
+    output->symbol_size_bytes = floor((double)output->max_packet_payload_size / (output->symbol_alignment * output->symbols_per_group)) * output->symbol_alignment;
+
+    // Calculate the total number of source symbols (kt)
+    double kt = ceil((double)output->file_size_bytes / output->symbol_size_bytes);
+
+    // Calculate the number of source blocks
+    output->num_source_blocks = ceil(kt / output->max_source_symbols_per_block);
+
+    // Since sub-blocks are not used, set num_sub_blocks to 1
+    output->num_sub_blocks = 1;
+
+    // Calculate the number of source symbols per block
+    output->source_symbols_per_block = ceil((uint32_t)kt / output->num_source_blocks);
+
+    // Calculate LDPC symbols
+    uint32_t X = floor(sqrt(2 * output->source_symbols_per_block));
+    for (; X * X < 2 * output->source_symbols_per_block + X; X++)
+        ;
+    for (output->ldpc_symbols = ceil(0.01 * output->source_symbols_per_block) + X; !is_prime(output->ldpc_symbols); output->ldpc_symbols++)
+        ;
+
+    // Calculate Half symbols
+    output->half_symbols = 1;
+    while (true)
+    {
+        if (choose(output->half_symbols, ceil((double)output->half_symbols / 2.0)) > output->source_symbols_per_block + output->ldpc_symbols)
+            break;
+        output->half_symbols++;
+    }
+
+    // Calculate total precoding symbols
+    output->total_precoding_symbols = output->source_symbols_per_block + output->ldpc_symbols + output->half_symbols;
+
+    return output;
+}
+
+void raptor_multiplication(raptor *obj, gf2matrix *A, byte **block, byte **res_block)
+{
+    for (uint32_t j = 0; j < get_ncols(A); j++)
+        for (uint32_t i = 0; i < get_nrows(A); i++)
+            if (get_entry(A, i, j))
+                xor(res_block[i], res_block[i], block[j], obj->symbol_size_bytes);
+    printf("Done raptor_multiplication\n");
+}
+void copy_row(gf2matrix *mat1, uint32_t mat1_row, gf2matrix *mat2, uint32_t mat2_row)
+{
+    for (uint32_t i = 0; i < mat1->n_words; i++)
+    {
+        mat1->rows[mat1_row][i] ^= mat2->rows[mat2_row][i];
+    }
+}
+
+byte **rapter_generate_intermediate_symb(raptor *obj, byte **data)
+{
+    gf2matrix *A = malloc(sizeof(gf2matrix));
+    byte **output = (byte **)calloc(sizeof(byte *), obj->total_precoding_symbols);
+    for (uint32_t i = 0; i < obj->total_precoding_symbols; i++)
+        output[i] = (byte *)calloc(sizeof(byte), obj->symbol_size_bytes);
+    allocate_gf2matrix(A, obj->total_precoding_symbols, obj->total_precoding_symbols);
+    raptor_build_constraints_mat(obj, A);
+    raptor_multiplication(obj, A, data, output);
+    return output;
+}
+
+void raptor_print_object(raptor *obj)
+{
     printf("<- Raptor Object ->\n");
-    printf("\tfile_size_bytes %ld\n",obj->file_size_bytes);
-    printf("\tmin_source_symbols_per_block  %d\n",obj->min_source_symbols_per_block );
-    printf("\tmax_source_symbols_per_block  %d\n",obj->max_source_symbols_per_block );
-    printf("\tmax_symbols_per_packet  %d\n",obj->max_symbols_per_packet );
-    printf("\tsymbol_alignment %d\n",obj->symbol_alignment);
-    printf("\tmax_packet_payload_size  %d\n",obj->max_packet_payload_size );
-    printf("\tnum_sub_blocks  %d\n",obj->num_sub_blocks );
-    printf("\tsymbol_size_bytes  %d\n",obj->symbol_size_bytes );
-    printf("\tsymbols_per_group  %d\n",obj->symbols_per_group );
-    printf("\tnum_source_blocks  %d\n",obj->num_source_blocks );
-    printf("\tsource_symbols_per_block  %d\n",obj->source_symbols_per_block );
-    printf("\ttotal_precoding_symbols  %d\n",obj->total_precoding_symbols );
-    printf("\tldpc_symbols  %d\n",obj->ldpc_symbols );
-    printf("\thalf_symbols  %d\n",obj->half_symbols );
+    printf("\tfile_size_bytes %ld\n", obj->file_size_bytes);
+    printf("\tmin_source_symbols_per_block  %d\n", obj->min_source_symbols_per_block);
+    printf("\tmax_source_symbols_per_block  %d\n", obj->max_source_symbols_per_block);
+    printf("\tmax_symbols_per_packet  %d\n", obj->max_symbols_per_packet);
+    printf("\tsymbol_alignment %d\n", obj->symbol_alignment);
+    printf("\tmax_packet_payload_size  %d\n", obj->max_packet_payload_size);
+    printf("\tnum_sub_blocks  %d\n", obj->num_sub_blocks);
+    printf("\tsymbol_size_bytes  %d\n", obj->symbol_size_bytes);
+    printf("\tsymbols_per_group  %d\n", obj->symbols_per_group);
+    printf("\tnum_source_blocks  %d\n", obj->num_source_blocks);
+    printf("\tsource_symbols_per_block  %d\n", obj->source_symbols_per_block);
+    printf("\ttotal_precoding_symbols  %d\n", obj->total_precoding_symbols);
+    printf("\tldpc_symbols  %d\n", obj->ldpc_symbols);
+    printf("\thalf_symbols  %d\n", obj->half_symbols);
     printf("------------\n");
 }
 
-byte* serialize_int(byte*buffer, int value)
+byte *serialize_int(byte *buffer, int value)
 {
-  /* Write big-endian int value into buffer; assumes 32-bit int and 8-bit char. */
-  buffer[0] = value >> 24;
-  buffer[1] = value >> 16;
-  buffer[2] = value >> 8;
-  buffer[3] = value;
-  return buffer + 4;
+    /* Write big-endian int value into buffer; assumes 32-bit int and 8-bit char. */
+    buffer[0] = value >> 24;
+    buffer[1] = value >> 16;
+    buffer[2] = value >> 8;
+    buffer[3] = value;
+    return buffer + 4;
 }
-byte* serialize_char(byte*buffer, char value)
+byte *serialize_char(byte *buffer, char value)
 {
-  buffer[0] = value;
-  return buffer + 1;
-} 
-byte* raptor_serialze(raptor* obj,byte* buffer){
-    printf("obj -> %p and buffer %p \n",obj,buffer); 
-    buffer = serialize_int(buffer,obj->file_size_bytes);
+    buffer[0] = value;
+    return buffer + 1;
+}
+byte *raptor_serialze(raptor *obj, byte *buffer)
+{
+    printf("obj -> %p and buffer %p \n", obj, buffer);
+    buffer = serialize_int(buffer, obj->file_size_bytes);
     printf("done f\n");
-    buffer = serialize_int(buffer,obj->sub_block_size_target );
+    buffer = serialize_int(buffer, obj->sub_block_size_target);
     printf("done sub_block_size_target \n");
-    buffer = serialize_int(buffer,obj->max_packet_payload_size );
-    buffer = serialize_int(buffer,obj->symbol_alignment);
-    buffer = serialize_int(buffer,obj->max_source_symbols_per_block );
-    buffer = serialize_int(buffer,obj->min_source_symbols_per_block );
-    buffer = serialize_int(buffer,obj->max_symbols_per_packet );
-    buffer = serialize_int(buffer,obj->symbol_size_bytes );
-    buffer = serialize_int(buffer,obj->num_source_blocks );
-    buffer = serialize_int(buffer,obj->num_sub_blocks );
-    buffer = serialize_int(buffer,obj->source_symbols_per_block );
-    buffer = serialize_int(buffer,obj->total_precoding_symbols );
-    buffer = serialize_int(buffer,obj->ldpc_symbols );
-    buffer = serialize_int(buffer,obj->half_symbols );
-    buffer = serialize_int(buffer,obj->symbols_per_group );
+    buffer = serialize_int(buffer, obj->max_packet_payload_size);
+    buffer = serialize_int(buffer, obj->symbol_alignment);
+    buffer = serialize_int(buffer, obj->max_source_symbols_per_block);
+    buffer = serialize_int(buffer, obj->min_source_symbols_per_block);
+    buffer = serialize_int(buffer, obj->max_symbols_per_packet);
+    buffer = serialize_int(buffer, obj->symbol_size_bytes);
+    buffer = serialize_int(buffer, obj->num_source_blocks);
+    buffer = serialize_int(buffer, obj->num_sub_blocks);
+    buffer = serialize_int(buffer, obj->source_symbols_per_block);
+    buffer = serialize_int(buffer, obj->total_precoding_symbols);
+    buffer = serialize_int(buffer, obj->ldpc_symbols);
+    buffer = serialize_int(buffer, obj->half_symbols);
+    buffer = serialize_int(buffer, obj->symbols_per_group);
     return buffer;
-} 
+}

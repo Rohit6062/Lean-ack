@@ -138,7 +138,6 @@ bool checksum(byte* data,uint32_t len){
 
 // printf buffer irrispective of 0
 void raptor_print(byte* a,uint32_t n){
-    printf("raptor print:\n");
     for(uint32_t i=0;i<n;i++)printf("%c",a[i]);
     printf("\n");
 }
